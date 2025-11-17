@@ -45,6 +45,7 @@ public class ReviewService {
                 .aiModel("gpt-4-turbo-preview")
                 .build();
             review = reviewRepository.save(review);
+            final Review savedReview = review;  // Make it effectively final for lambda
 
             // Fetch PR diff from GitHub
             String diff = gitHubClientService.getPullRequestDiff(
@@ -69,7 +70,7 @@ public class ReviewService {
             // Save comments to database
             List<Comment> comments = result.getComments().stream()
                 .map(rc -> Comment.builder()
-                    .review(review)
+                    .review(savedReview)
                     .filePath(rc.getFilePath())
                     .lineNumber(rc.getLineNumber())
                     .severity(rc.getSeverity())

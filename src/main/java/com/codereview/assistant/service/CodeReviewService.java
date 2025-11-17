@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.ChatClient;
+import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.List;
 @Slf4j
 public class CodeReviewService {
 
-    private final ChatModel chatModel;
+    private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
     private final ReviewRuleService reviewRuleService;
 
@@ -36,10 +36,10 @@ public class CodeReviewService {
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .withModel("gpt-4-turbo-preview")
-                .withTemperature(0.3)
+                .withTemperature(0.3f)
                 .build();
 
-            ChatResponse response = chatModel.call(new Prompt(prompt, options));
+            ChatResponse response = chatClient.call(new Prompt(prompt, options));
 
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
@@ -72,10 +72,10 @@ public class CodeReviewService {
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .withModel("gpt-4-turbo-preview")
-                .withTemperature(0.3)
+                .withTemperature(0.3f)
                 .build();
 
-            ChatResponse response = chatModel.call(new Prompt(fullPrompt, options));
+            ChatResponse response = chatClient.call(new Prompt(fullPrompt, options));
 
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
