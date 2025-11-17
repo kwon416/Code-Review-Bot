@@ -3,6 +3,7 @@ package com.codereview.assistant.service;
 import com.codereview.assistant.domain.Comment;
 import com.codereview.assistant.domain.PullRequest;
 import com.codereview.assistant.domain.Review;
+import com.codereview.assistant.domain.ReviewRule;
 import com.codereview.assistant.dto.CodeReviewResult;
 import com.codereview.assistant.repository.CommentRepository;
 import com.codereview.assistant.repository.ReviewRepository;
@@ -26,6 +27,7 @@ public class ReviewService {
     private final CommentRepository commentRepository;
     private final CodeReviewService codeReviewService;
     private final GitHubClientService gitHubClientService;
+    private final ReviewRuleService reviewRuleService;
 
     @Async
     @Transactional
@@ -52,8 +54,17 @@ public class ReviewService {
                 pullRequest.getRepository().getInstallationId()
             );
 
-            // Analyze code with AI
-            CodeReviewResult result = codeReviewService.analyzeCode(diff, detectLanguage(diff));
+            // Get custom review rules for this repository
+            List<ReviewRule> customRules = reviewRuleService
+                .getActiveRulesForRepository(pullRequest.getRepository().getId());
+
+            // Analyze code with AI (with custom rules if available)
+            CodeReviewResult result;
+            if (customRules.isEmpty()) {
+                result = codeReviewService.analyzeCode(diff, detectLanguage(diff));
+            } else {
+                result = codeReviewService.analyzeCodeWithRules(diff, detectLanguage(diff), customRules);
+            }
 
             // Save comments to database
             List<Comment> comments = result.getComments().stream()
