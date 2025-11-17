@@ -18,7 +18,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/webhook/**", "/actuator/**").permitAll()
+                .requestMatchers("/api/webhook/**", "/api/dashboard/**", "/actuator/**").permitAll()
                 .anyRequest().authenticated()
             );
 
