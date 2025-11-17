@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeReview AI Assistant - Dashboard</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 CodeReview AI Assistant</h1>
+            <p class="subtitle">AI 기반 실시간 코드 리뷰 대시보드</p>
+        </header>
+
+        <main>
+            <!-- 전체 통계 -->
+            <section class="stats-overview">
+                <h2>📊 전체 통계</h2>
+                <div class="stat-cards">
+                    <div class="stat-card">
+                        <div class="stat-label">총 Repository</div>
+                        <div class="stat-value" id="totalRepositories">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">총 리뷰</div>
+                        <div class="stat-value" id="totalReviews">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">총 코멘트</div>
+                        <div class="stat-value" id="totalComments">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">평균 처리 시간</div>
+                        <div class="stat-value" id="avgProcessingTime">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 차트 섹션 -->
+            <section class="charts-section">
+                <div class="chart-container">
+                    <h3>심각도별 이슈 분포</h3>
+                    <canvas id="severityChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>카테고리별 이슈 분포</h3>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 최근 활동 -->
+            <section class="recent-activity">
+                <h2>📝 최근 활동</h2>
+                <div class="activity-stats">
+                    <div class="activity-item">
+                        <span class="activity-label">오늘</span>
+                        <span class="activity-value" id="reviewsToday">-</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">이번 주</span>
+                        <span class="activity-value" id="reviewsThisWeek">-</span>
+                    </div>
+                    <div class="activity-item">
+                        <span class="activity-label">이번 달</span>
+                        <span class="activity-value" id="reviewsThisMonth">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 최근 리뷰 목록 -->
+            <section class="recent-reviews">
+                <h2>🔍 최근 리뷰</h2>
+                <div id="reviewList" class="review-list">
+                    <div class="loading">데이터 로딩 중...</div>
+                </div>
+            </section>
+
+            <!-- API 문서 링크 -->
+            <section class="api-links">
+                <h2>🔗 API 문서</h2>
+                <div class="links">
+                    <a href="/swagger-ui/index.html" target="_blank" class="btn btn-primary">
+                        Swagger UI
+                    </a>
+                    <a href="/actuator/health" target="_blank" class="btn btn-secondary">
+                        Health Check
+                    </a>
+                    <a href="/actuator/metrics" target="_blank" class="btn btn-secondary">
+                        Metrics
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 CodeReview AI Assistant. MIT License.</p>
+        </footer>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
