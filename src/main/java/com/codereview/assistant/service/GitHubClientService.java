@@ -1,5 +1,6 @@
 package com.codereview.assistant.service;
 
+import com.codereview.assistant.exception.GitHubApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.kohsuke.github.*;
@@ -23,16 +24,23 @@ public class GitHubClientService {
     /**
      * Fetches the diff content for a pull request
      */
-    public String getPullRequestDiff(String owner, String repo, int prNumber, Long installationId)
-            throws IOException {
+    public String getPullRequestDiff(String owner, String repo, int prNumber, Long installationId) {
         log.info("Fetching diff for PR: {}/{}#{}", owner, repo, prNumber);
 
-        GitHub github = getGitHubClient(installationId);
-        GHRepository repository = github.getRepository(owner + "/" + repo);
-        GHPullRequest pullRequest = repository.getPullRequest(prNumber);
+        try {
+            GitHub github = getGitHubClient(installationId);
+            GHRepository repository = github.getRepository(owner + "/" + repo);
+            GHPullRequest pullRequest = repository.getPullRequest(prNumber);
 
-        // Get diff using GitHub API
-        return pullRequest.diff().toString();
+            // Get diff using GitHub API
+            return pullRequest.diff().toString();
+        } catch (IOException e) {
+            log.error("Failed to fetch diff for PR: {}/{}#{}", owner, repo, prNumber, e);
+            throw new GitHubApiException(
+                String.format("Failed to fetch diff for PR %s/%s#%d: %s", owner, repo, prNumber, e.getMessage()),
+                e
+            );
+        }
     }
 
     /**
@@ -45,33 +53,41 @@ public class GitHubClientService {
             String commitSha,
             List<ReviewCommentRequest> comments,
             Long installationId
-    ) throws IOException {
+    ) {
         log.info("Posting {} review comments for PR: {}/{}#{}",
             comments.size(), owner, repo, prNumber);
 
-        GitHub github = getGitHubClient(installationId);
-        GHRepository repository = github.getRepository(owner + "/" + repo);
-        GHPullRequest pullRequest = repository.getPullRequest(prNumber);
+        try {
+            GitHub github = getGitHubClient(installationId);
+            GHRepository repository = github.getRepository(owner + "/" + repo);
+            GHPullRequest pullRequest = repository.getPullRequest(prNumber);
 
-        // Create review with comments
-        GHPullRequestReviewBuilder reviewBuilder = pullRequest.createReview()
-            .event(GHPullRequestReviewEvent.COMMENT)
-            .commitId(commitSha);
+            // Create review with comments
+            GHPullRequestReviewBuilder reviewBuilder = pullRequest.createReview()
+                .event(GHPullRequestReviewEvent.COMMENT)
+                .commitId(commitSha);
 
-        for (ReviewCommentRequest comment : comments) {
-            String body = formatCommentBody(comment);
+            for (ReviewCommentRequest comment : comments) {
+                String body = formatCommentBody(comment);
 
-            if (comment.getLineNumber() != null) {
-                reviewBuilder.comment(
-                    body,
-                    comment.getFilePath(),
-                    comment.getLineNumber()
-                );
+                if (comment.getLineNumber() != null) {
+                    reviewBuilder.comment(
+                        body,
+                        comment.getFilePath(),
+                        comment.getLineNumber()
+                    );
+                }
             }
-        }
 
-        reviewBuilder.create();
-        log.info("Successfully posted review comments");
+            reviewBuilder.create();
+            log.info("Successfully posted review comments");
+        } catch (IOException e) {
+            log.error("Failed to post review comments for PR: {}/{}#{}", owner, repo, prNumber, e);
+            throw new GitHubApiException(
+                String.format("Failed to post review comments for PR %s/%s#%d: %s", owner, repo, prNumber, e.getMessage()),
+                e
+            );
+        }
     }
 
     /**
@@ -84,26 +100,34 @@ public class GitHubClientService {
             String summary,
             int totalComments,
             Long installationId
-    ) throws IOException {
+    ) {
         log.info("Posting summary comment for PR: {}/{}#{}", owner, repo, prNumber);
 
-        GitHub github = getGitHubClient(installationId);
-        GHRepository repository = github.getRepository(owner + "/" + repo);
-        GHPullRequest pullRequest = repository.getPullRequest(prNumber);
+        try {
+            GitHub github = getGitHubClient(installationId);
+            GHRepository repository = github.getRepository(owner + "/" + repo);
+            GHPullRequest pullRequest = repository.getPullRequest(prNumber);
 
-        String commentBody = """
-            ## 🤖 AI Code Review Summary
+            String commentBody = """
+                ## 🤖 AI Code Review Summary
 
-            %s
+                %s
 
-            **Total Issues Found:** %d
+                **Total Issues Found:** %d
 
-            ---
-            *Powered by CodeReview AI Assistant*
-            """.formatted(summary, totalComments);
+                ---
+                *Powered by CodeReview AI Assistant*
+                """.formatted(summary, totalComments);
 
-        pullRequest.comment(commentBody);
-        log.info("Successfully posted summary comment");
+            pullRequest.comment(commentBody);
+            log.info("Successfully posted summary comment");
+        } catch (IOException e) {
+            log.error("Failed to post summary comment for PR: {}/{}#{}", owner, repo, prNumber, e);
+            throw new GitHubApiException(
+                String.format("Failed to post summary comment for PR %s/%s#%d: %s", owner, repo, prNumber, e.getMessage()),
+                e
+            );
+        }
     }
 
     private GitHub getGitHubClient(Long installationId) throws IOException {
