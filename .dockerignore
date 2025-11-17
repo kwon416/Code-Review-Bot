@@ -1,0 +1,56 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+*.md
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build outputs (exclude from build context)
+build/
+target/
+out/
+bin/
+
+# Gradle cache
+.gradle/
+
+# Test files
+**/test/
+**/*Test.java
+**/*Tests.java
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker files (no need to include in build context)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
