@@ -6,12 +6,16 @@ import com.codereview.assistant.service.GitHubWebhookService;
 import com.codereview.assistant.service.PullRequestService;
 import com.codereview.assistant.service.ReviewService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Webhook", description = "GitHub 웹훅 이벤트 처리 API")
 @RestController
 @RequestMapping("/api/webhook")
 @RequiredArgsConstructor
@@ -23,10 +27,17 @@ public class WebhookController {
     private final ReviewService reviewService;
     private final ObjectMapper objectMapper;
 
+    @Operation(
+        summary = "GitHub 웹훅 이벤트 처리",
+        description = "GitHub에서 발생한 웹훅 이벤트를 수신하여 처리합니다. Pull Request 이벤트를 처리하며, 서명을 검증합니다."
+    )
     @PostMapping("/github")
     public ResponseEntity<String> handleGitHubWebhook(
+            @Parameter(description = "GitHub 이벤트 타입 (예: pull_request)", example = "pull_request")
             @RequestHeader(value = "X-GitHub-Event", required = false) String event,
+            @Parameter(description = "GitHub 웹훅 서명 (HMAC-SHA256)", example = "sha256=...")
             @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature,
+            @Parameter(description = "웹훅 페이로드 (JSON)")
             @RequestBody String payload
     ) {
         log.info("Received GitHub webhook event: {}", event);
@@ -75,6 +86,10 @@ public class WebhookController {
         }
     }
 
+    @Operation(
+        summary = "헬스 체크",
+        description = "웹훅 엔드포인트의 상태를 확인합니다."
+    )
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");

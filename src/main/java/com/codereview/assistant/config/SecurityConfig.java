@@ -18,7 +18,14 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/webhook/**", "/api/dashboard/**", "/api/rules/**", "/actuator/**").permitAll()
+                .requestMatchers(
+                    "/api/webhook/**",
+                    "/api/dashboard/**",
+                    "/api/rules/**",
+                    "/actuator/**",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             );
 
