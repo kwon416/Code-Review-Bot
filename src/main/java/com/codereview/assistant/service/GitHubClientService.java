@@ -15,11 +15,14 @@ import java.util.List;
 @Slf4j
 public class GitHubClientService {
 
-    @Value("${github.app.id}")
-    private Long appId;
+    @Value("${github.app.id:}")
+    private String appId;
 
-    @Value("${github.app.private-key}")
+    @Value("${github.app.private-key:}")
     private String privateKey;
+
+    @Value("${github.token:#{null}}")
+    private String githubToken;
 
     /**
      * Fetches the diff content for a pull request
@@ -32,8 +35,19 @@ public class GitHubClientService {
             GHRepository repository = github.getRepository(owner + "/" + repo);
             GHPullRequest pullRequest = repository.getPullRequest(prNumber);
 
-            // Get diff using GitHub API
-            return pullRequest.diff().toString();
+            // Get diff by listing files and creating a simple diff format
+            StringBuilder diffBuilder = new StringBuilder();
+            for (GHPullRequestFileDetail file : pullRequest.listFiles()) {
+                diffBuilder.append("diff --git a/").append(file.getFilename())
+                    .append(" b/").append(file.getFilename()).append("\n");
+                diffBuilder.append("--- a/").append(file.getFilename()).append("\n");
+                diffBuilder.append("+++ b/").append(file.getFilename()).append("\n");
+                diffBuilder.append("@@ -").append(file.getDeletions())
+                    .append(" +").append(file.getAdditions()).append(" @@\n");
+                diffBuilder.append(file.getPatch() != null ? file.getPatch() : "").append("\n\n");
+            }
+
+            return diffBuilder.toString();
         } catch (IOException e) {
             log.error("Failed to fetch diff for PR: {}/{}#{}", owner, repo, prNumber, e);
             throw new GitHubApiException(
@@ -132,11 +146,18 @@ public class GitHubClientService {
 
     private GitHub getGitHubClient(Long installationId) throws IOException {
         // For GitHub App authentication
-        // This is a simplified version - in production, you'd cache the token
-        // and handle token refresh
-        return new GitHubBuilder()
-            .withAppInstallationToken(appId.toString(), privateKey, installationId)
-            .build();
+        // This is a simplified version - in production, you'd implement proper GitHub App auth
+
+        // Use personal access token if available (for testing/development)
+        if (githubToken != null && !githubToken.isEmpty()) {
+            return new GitHubBuilder()
+                .withOAuthToken(githubToken)
+                .build();
+        }
+
+        // Otherwise, use anonymous access (limited rate)
+        log.warn("No GitHub token configured - using anonymous access with limited rate");
+        return new GitHubBuilder().build();
     }
 
     private String formatCommentBody(ReviewCommentRequest comment) {

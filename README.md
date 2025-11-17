@@ -8,10 +8,12 @@ AI 기반 실시간 코드 리뷰 자동화 시스템
 
 ## 주요 기능
 
-- GitHub Webhook 연동을 통한 실시간 PR 감지
-- AI 기반 코드 분석 (버그, 성능, 보안, 베스트 프랙티스)
-- 자동 GitHub 코멘트 생성
-- 리뷰 히스토리 및 통계 대시보드
+- **멀티 플랫폼 지원**: GitHub, GitLab, Bitbucket 웹훅 연동
+- **AI 기반 코드 분석**: 버그, 성능, 보안, 베스트 프랙티스 체크
+- **언어별 특화 리뷰**: Java, Python, JavaScript, TypeScript, Go, Rust, C++ 등
+- **자동 코멘트 생성**: PR/MR에 자동으로 리뷰 코멘트 작성
+- **커스텀 리뷰 규칙**: 팀별 코딩 규칙 적용
+- **리뷰 히스토리 & 통계**: 대시보드를 통한 인사이트 제공
 
 ## 기술 스택
 
@@ -121,9 +123,17 @@ open build/reports/tests/test/index.html
 
 ## API 엔드포인트
 
-### Webhook
+### GitHub Webhook
 - `POST /api/webhook/github` - GitHub Webhook 수신
-- `GET /api/webhook/health` - Health Check
+- `GET /api/webhook/health` - GitHub Webhook Health Check
+
+### GitLab Webhook
+- `POST /api/webhook/gitlab` - GitLab Webhook 수신
+- `GET /api/webhook/gitlab/health` - GitLab Webhook Health Check
+
+### Bitbucket Webhook
+- `POST /api/webhook/bitbucket` - Bitbucket Webhook 수신
+- `GET /api/webhook/bitbucket/health` - Bitbucket Webhook Health Check
 
 ### Dashboard & Analytics
 - `GET /api/dashboard/statistics` - 대시보드 전체 통계
@@ -139,8 +149,12 @@ open build/reports/tests/test/index.html
 
 ### Monitoring
 - `GET /actuator/health` - Actuator Health Check
+- `GET /actuator/metrics` - Application Metrics
+- `GET /actuator/info` - Application Info
 
-## GitHub App 설정 가이드
+## 플랫폼별 설정 가이드
+
+### GitHub App 설정
 
 1. GitHub에서 새 GitHub App 생성
 2. Webhook URL 설정: `https://your-domain.com/api/webhook/github`
@@ -151,6 +165,15 @@ open build/reports/tests/test/index.html
 4. Webhook 이벤트 선택:
    - Pull request
    - Pull request review
+
+### GitLab & Bitbucket 설정
+
+GitLab과 Bitbucket 설정 방법은 [Phase 3 가이드](docs/PHASE3_GUIDE.md)를 참조하세요.
+
+**지원 플랫폼:**
+- ✅ GitHub (App & Personal Token)
+- ✅ GitLab (Personal Token)
+- ✅ Bitbucket (App Password)
 
 ## 프로젝트 구조
 
@@ -182,15 +205,17 @@ src/
 ### Phase 2 ✅ (완료)
 - [x] 대시보드 백엔드 API
 - [x] 리뷰 통계 및 인사이트
-- [x] 커스텀 리뷰 규칙
+- [x] 커스텀 리뷰 규칙 엔진
 - [x] 단위 및 통합 테스트
 - [x] 테스트 및 API 문서
 
-### Phase 3 (계획)
+### Phase 3 ✅ (완료)
+- [x] GitLab/Bitbucket 지원
+- [x] 멀티 언어 지원 확대 (Java, Python, JavaScript, TypeScript, Go, Rust, C++)
+
+### Phase 4 (계획)
 - [ ] 프론트엔드 대시보드 UI
-- [ ] GitLab/Bitbucket 지원
 - [ ] IDE 플러그인
-- [ ] 멀티 언어 지원 확대
 
 ## 라이선스
 

@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.ChatClient;
+import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.stereotype.Service;
@@ -21,9 +21,10 @@ import java.util.List;
 @Slf4j
 public class CodeReviewService {
 
-    private final ChatModel chatModel;
+    private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
     private final ReviewRuleService reviewRuleService;
+    private final LanguageSpecificPromptService languageSpecificPromptService;
 
     /**
      * Analyzes code changes and returns review comments
@@ -36,10 +37,10 @@ public class CodeReviewService {
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .withModel("gpt-4-turbo-preview")
-                .withTemperature(0.3)
+                .withTemperature(0.3f)
                 .build();
 
-            ChatResponse response = chatModel.call(new Prompt(prompt, options));
+            ChatResponse response = chatClient.call(new Prompt(prompt, options));
 
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
@@ -72,10 +73,10 @@ public class CodeReviewService {
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .withModel("gpt-4-turbo-preview")
-                .withTemperature(0.3)
+                .withTemperature(0.3f)
                 .build();
 
-            ChatResponse response = chatModel.call(new Prompt(fullPrompt, options));
+            ChatResponse response = chatClient.call(new Prompt(fullPrompt, options));
 
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
@@ -95,44 +96,7 @@ public class CodeReviewService {
     }
 
     private String buildCodeReviewPrompt(String diffContent, String language) {
-        return """
-            You are an expert code reviewer. Analyze the following code diff and provide detailed feedback.
-
-            Focus on:
-            1. Bugs and potential errors
-            2. Performance issues
-            3. Security vulnerabilities
-            4. Code style and best practices
-            5. Maintainability concerns
-
-            Language: %s
-
-            Code Diff:
-            ```
-            %s
-            ```
-
-            Provide your review in the following JSON format:
-            {
-              "summary": "Overall summary of the code review",
-              "comments": [
-                {
-                  "filePath": "path/to/file",
-                  "lineNumber": 10,
-                  "severity": "warning",
-                  "category": "performance",
-                  "message": "Brief description of the issue",
-                  "suggestion": "How to fix or improve",
-                  "codeExample": "Example of improved code (optional)"
-                }
-              ]
-            }
-
-            Severity levels: info, warning, error
-            Categories: bug, performance, security, style, best-practice
-
-            Only include meaningful comments. Skip trivial issues.
-            """.formatted(language, diffContent);
+        return languageSpecificPromptService.buildCodeReviewPrompt(diffContent, language);
     }
 
     private CodeReviewResult parseCodeReviewResponse(String response, int tokensUsed)

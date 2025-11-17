@@ -1,5 +1,6 @@
 # Multi-stage build for optimized image size
-FROM eclipse-temurin:17-jdk-alpine AS builder
+# ARM64(M1/M2 Mac) 지원을 위한 멀티 플랫폼 빌드
+FROM --platform=$BUILDPLATFORM eclipse-temurin:17-jdk AS builder
 
 WORKDIR /app
 
@@ -21,7 +22,7 @@ COPY src src
 RUN ./gradlew build -x test --no-daemon
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM --platform=$BUILDPLATFORM eclipse-temurin:17-jre
 
 # Add metadata labels
 LABEL maintainer="CodeReview AI Assistant"
@@ -29,7 +30,7 @@ LABEL description="AI-powered code review assistant for GitHub Pull Requests"
 LABEL version="1.0.0"
 
 # Create non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 WORKDIR /app
 
@@ -45,9 +46,14 @@ USER appuser
 # Expose application port
 EXPOSE 8080
 
+# Install curl for health check
+USER root
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+USER appuser
+
 # Health check using actuator endpoint
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # JVM optimization flags
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
