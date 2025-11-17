@@ -2,6 +2,7 @@ package com.codereview.assistant.service;
 
 import com.codereview.assistant.domain.ReviewRule;
 import com.codereview.assistant.dto.ReviewRuleDto;
+import com.codereview.assistant.exception.ResourceNotFoundException;
 import com.codereview.assistant.repository.ReviewRuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -153,7 +154,7 @@ public class ReviewRuleService {
     @Transactional
     public ReviewRuleDto updateRule(Long id, ReviewRuleDto ruleDto) {
         ReviewRule rule = reviewRuleRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Rule not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("ReviewRule", "id", id));
 
         if (ruleDto.getName() != null) rule.setName(ruleDto.getName());
         if (ruleDto.getDescription() != null) rule.setDescription(ruleDto.getDescription());
