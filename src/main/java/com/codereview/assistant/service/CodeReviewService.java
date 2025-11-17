@@ -22,6 +22,7 @@ public class CodeReviewService {
 
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
+    private final LanguageSpecificPromptService languageSpecificPromptService;
 
     /**
      * Analyzes code changes and returns review comments
@@ -57,44 +58,7 @@ public class CodeReviewService {
     }
 
     private String buildCodeReviewPrompt(String diffContent, String language) {
-        return """
-            You are an expert code reviewer. Analyze the following code diff and provide detailed feedback.
-
-            Focus on:
-            1. Bugs and potential errors
-            2. Performance issues
-            3. Security vulnerabilities
-            4. Code style and best practices
-            5. Maintainability concerns
-
-            Language: %s
-
-            Code Diff:
-            ```
-            %s
-            ```
-
-            Provide your review in the following JSON format:
-            {
-              "summary": "Overall summary of the code review",
-              "comments": [
-                {
-                  "filePath": "path/to/file",
-                  "lineNumber": 10,
-                  "severity": "warning",
-                  "category": "performance",
-                  "message": "Brief description of the issue",
-                  "suggestion": "How to fix or improve",
-                  "codeExample": "Example of improved code (optional)"
-                }
-              ]
-            }
-
-            Severity levels: info, warning, error
-            Categories: bug, performance, security, style, best-practice
-
-            Only include meaningful comments. Skip trivial issues.
-            """.formatted(language, diffContent);
+        return languageSpecificPromptService.buildCodeReviewPrompt(diffContent, language);
     }
 
     private CodeReviewResult parseCodeReviewResponse(String response, int tokensUsed)

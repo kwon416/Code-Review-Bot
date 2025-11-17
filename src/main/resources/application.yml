@@ -56,9 +56,22 @@ server:
 
 github:
   app:
-    id: ${GITHUB_APP_ID}
-    private-key: ${GITHUB_PRIVATE_KEY}
-    webhook-secret: ${GITHUB_WEBHOOK_SECRET}
+    id: ${GITHUB_APP_ID:}
+    private-key: ${GITHUB_PRIVATE_KEY:}
+    webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
+  token: ${GITHUB_TOKEN:}
+
+gitlab:
+  api:
+    url: ${GITLAB_API_URL:https://gitlab.com/api/v4}
+  token: ${GITLAB_TOKEN:}
+
+bitbucket:
+  api:
+    url: ${BITBUCKET_API_URL:https://api.bitbucket.org/2.0}
+  username: ${BITBUCKET_USERNAME:}
+  app:
+    password: ${BITBUCKET_APP_PASSWORD:}
 
 logging:
   level:

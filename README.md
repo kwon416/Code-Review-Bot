@@ -8,10 +8,12 @@ AI 기반 실시간 코드 리뷰 자동화 시스템
 
 ## 주요 기능
 
-- GitHub Webhook 연동을 통한 실시간 PR 감지
-- AI 기반 코드 분석 (버그, 성능, 보안, 베스트 프랙티스)
-- 자동 GitHub 코멘트 생성
-- 리뷰 히스토리 및 통계 대시보드
+- **멀티 플랫폼 지원**: GitHub, GitLab, Bitbucket 웹훅 연동
+- **AI 기반 코드 분석**: 버그, 성능, 보안, 베스트 프랙티스 체크
+- **언어별 특화 리뷰**: Java, Python, JavaScript, TypeScript, Go, Rust, C++ 등
+- **자동 코멘트 생성**: PR/MR에 자동으로 리뷰 코멘트 작성
+- **커스텀 리뷰 규칙**: 팀별 코딩 규칙 적용
+- **리뷰 히스토리 & 통계**: 대시보드를 통한 인사이트 제공
 
 ## 기술 스택
 
@@ -98,11 +100,33 @@ Flyway를 사용하여 자동으로 데이터베이스 스키마가 생성됩니
 
 ## API 엔드포인트
 
+### GitHub Webhook
 - `POST /api/webhook/github` - GitHub Webhook 수신
-- `GET /api/webhook/health` - Health Check
-- `GET /actuator/health` - Actuator Health Check
+- `GET /api/webhook/health` - GitHub Webhook Health Check
 
-## GitHub App 설정 가이드
+### GitLab Webhook
+- `POST /api/webhook/gitlab` - GitLab Webhook 수신
+- `GET /api/webhook/gitlab/health` - GitLab Webhook Health Check
+
+### Bitbucket Webhook
+- `POST /api/webhook/bitbucket` - Bitbucket Webhook 수신
+- `GET /api/webhook/bitbucket/health` - Bitbucket Webhook Health Check
+
+### Dashboard & Review APIs
+- `GET /api/dashboard/statistics` - 대시보드 통계
+- `GET /api/dashboard/trends` - 리뷰 트렌드 데이터
+- `GET /api/reviews/{id}` - 리뷰 상세 정보
+- `GET /api/review-rules` - 커스텀 리뷰 규칙 조회
+- `POST /api/review-rules` - 커스텀 리뷰 규칙 생성
+
+### Monitoring
+- `GET /actuator/health` - Actuator Health Check
+- `GET /actuator/metrics` - Application Metrics
+- `GET /actuator/info` - Application Info
+
+## 플랫폼별 설정 가이드
+
+### GitHub App 설정
 
 1. GitHub에서 새 GitHub App 생성
 2. Webhook URL 설정: `https://your-domain.com/api/webhook/github`
@@ -113,6 +137,15 @@ Flyway를 사용하여 자동으로 데이터베이스 스키마가 생성됩니
 4. Webhook 이벤트 선택:
    - Pull request
    - Pull request review
+
+### GitLab & Bitbucket 설정
+
+GitLab과 Bitbucket 설정 방법은 [Phase 3 가이드](docs/PHASE3_GUIDE.md)를 참조하세요.
+
+**지원 플랫폼:**
+- ✅ GitHub (App & Personal Token)
+- ✅ GitLab (Personal Token)
+- ✅ Bitbucket (App Password)
 
 ## 프로젝트 구조
 
@@ -141,15 +174,15 @@ src/
 - [x] AI 코드 분석 엔진
 - [x] 자동 코멘트 생성
 
-### Phase 2 (현재)
-- [ ] 대시보드 UI
-- [ ] 리뷰 통계 및 인사이트
-- [ ] 커스텀 리뷰 규칙
+### Phase 2 ✅ (완료)
+- [x] 대시보드 REST API
+- [x] 리뷰 통계 및 인사이트
+- [x] 커스텀 리뷰 규칙 엔진
 
-### Phase 3
+### Phase 3 (현재)
 - [ ] GitLab/Bitbucket 지원
 - [ ] IDE 플러그인
-- [ ] 멀티 언어 지원 확대
+- [ ] 멀티 언어 지원 확대 (Python, TypeScript, Go 등)
 
 ## 라이선스
 
