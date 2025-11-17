@@ -96,6 +96,29 @@ Flyway를 사용하여 자동으로 데이터베이스 스키마가 생성됩니
 
 마이그레이션 파일 위치: `src/main/resources/db/migration/`
 
+## 테스트
+
+### 테스트 실행
+
+```bash
+# 전체 테스트 실행
+./gradlew test
+
+# 특정 테스트 클래스 실행
+./gradlew test --tests StatisticsServiceTest
+
+# 테스트 커버리지 리포트 생성
+./gradlew test jacocoTestReport
+
+# 테스트 리포트 확인
+open build/reports/tests/test/index.html
+```
+
+### 테스트 문서
+
+- **[테스트 가이드](docs/TESTING.md)** - 단위/통합 테스트 작성 및 실행 방법
+- **[API 테스트 가이드](docs/API_TESTING.md)** - REST API 테스트 방법 및 예제
+
 ## API 엔드포인트
 
 ### Webhook
@@ -160,8 +183,11 @@ src/
 - [x] 대시보드 백엔드 API
 - [x] 리뷰 통계 및 인사이트
 - [x] 커스텀 리뷰 규칙
+- [x] 단위 및 통합 테스트
+- [x] 테스트 및 API 문서
 
-### Phase 3
+### Phase 3 (계획)
+- [ ] 프론트엔드 대시보드 UI
 - [ ] GitLab/Bitbucket 지원
 - [ ] IDE 플러그인
 - [ ] 멀티 언어 지원 확대
