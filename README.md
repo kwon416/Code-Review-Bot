@@ -41,6 +41,17 @@ cp .env.example .env
 
 2. `.env` 파일 수정:
 ```bash
+# 데이터베이스 설정
+DB_USERNAME=postgres
+DB_PASSWORD=your_strong_password
+
+# Redis 설정
+REDIS_PASSWORD=your_redis_password
+
+# RabbitMQ 설정
+RABBITMQ_USERNAME=your_rabbitmq_user
+RABBITMQ_PASSWORD=your_rabbitmq_password
+
 # OpenAI API 키 설정
 OPENAI_API_KEY=your_openai_api_key
 
@@ -49,6 +60,12 @@ GITHUB_APP_ID=your_app_id
 GITHUB_PRIVATE_KEY=your_private_key
 GITHUB_WEBHOOK_SECRET=your_webhook_secret
 ```
+
+**⚠️ 보안 주의사항:**
+- 모든 환경 변수는 **필수**입니다. 설정하지 않으면 애플리케이션이 시작되지 않습니다.
+- 프로덕션 환경에서는 반드시 강력한 비밀번호를 사용하세요.
+- `.env` 파일은 절대 Git에 커밋하지 마세요 (이미 `.gitignore`에 포함됨).
+- 기본 계정(postgres/guest)은 개발 환경에서만 사용하세요.
 
 ### Docker로 실행
 
@@ -118,13 +135,13 @@ src/
 
 ## 개발 로드맵
 
-### Phase 1 (현재)
+### Phase 1 ✅ (완료)
 - [x] 프로젝트 기본 구조 설정
-- [ ] GitHub Webhook 통합
-- [ ] AI 코드 분석 엔진
-- [ ] 자동 코멘트 생성
+- [x] GitHub Webhook 통합
+- [x] AI 코드 분석 엔진
+- [x] 자동 코멘트 생성
 
-### Phase 2
+### Phase 2 (현재)
 - [ ] 대시보드 UI
 - [ ] 리뷰 통계 및 인사이트
 - [ ] 커스텀 리뷰 규칙
