@@ -1,5 +1,6 @@
 package com.codereview.assistant.service;
 
+import com.codereview.assistant.domain.ReviewRule;
 import com.codereview.assistant.dto.CodeReviewResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +23,7 @@ public class CodeReviewService {
 
     private final ChatModel chatModel;
     private final ObjectMapper objectMapper;
+    private final ReviewRuleService reviewRuleService;
 
     /**
      * Analyzes code changes and returns review comments
@@ -48,6 +50,42 @@ public class CodeReviewService {
 
         } catch (Exception e) {
             log.error("Error during code analysis", e);
+            return CodeReviewResult.builder()
+                .comments(new ArrayList<>())
+                .summary("Error occurred during code analysis: " + e.getMessage())
+                .tokensUsed(0)
+                .build();
+        }
+    }
+
+    /**
+     * Analyzes code with custom review rules
+     */
+    public CodeReviewResult analyzeCodeWithRules(String diffContent, String language, List<ReviewRule> customRules) {
+        log.info("Starting code analysis with {} custom rules", customRules.size());
+
+        try {
+            // Build prompt with custom rules
+            String basePrompt = buildCodeReviewPrompt(diffContent, language);
+            String customPrompt = reviewRuleService.buildCustomPromptFromRules(customRules);
+            String fullPrompt = basePrompt + customPrompt;
+
+            OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .withModel("gpt-4-turbo-preview")
+                .withTemperature(0.3)
+                .build();
+
+            ChatResponse response = chatModel.call(new Prompt(fullPrompt, options));
+
+            String content = response.getResult().getOutput().getContent();
+            int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
+
+            log.info("AI analysis with custom rules completed. Tokens used: {}", tokensUsed);
+
+            return parseCodeReviewResponse(content, tokensUsed);
+
+        } catch (Exception e) {
+            log.error("Error during code analysis with custom rules", e);
             return CodeReviewResult.builder()
                 .comments(new ArrayList<>())
                 .summary("Error occurred during code analysis: " + e.getMessage())

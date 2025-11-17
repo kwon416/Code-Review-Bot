@@ -98,8 +98,23 @@ Flyway를 사용하여 자동으로 데이터베이스 스키마가 생성됩니
 
 ## API 엔드포인트
 
+### Webhook
 - `POST /api/webhook/github` - GitHub Webhook 수신
 - `GET /api/webhook/health` - Health Check
+
+### Dashboard & Analytics
+- `GET /api/dashboard/statistics` - 대시보드 전체 통계
+- `GET /api/dashboard/reviews/recent` - 최근 리뷰 목록
+- `GET /api/dashboard/trends` - 트렌드 데이터 (일별 리뷰/코멘트/이슈)
+- `GET /api/dashboard/repositories/statistics` - Repository별 통계
+
+### Custom Review Rules
+- `GET /api/rules` - 리뷰 규칙 목록 조회
+- `POST /api/rules` - 새 규칙 생성
+- `PUT /api/rules/{id}` - 규칙 수정
+- `DELETE /api/rules/{id}` - 규칙 삭제
+
+### Monitoring
 - `GET /actuator/health` - Actuator Health Check
 
 ## GitHub App 설정 가이드
@@ -141,10 +156,10 @@ src/
 - [x] AI 코드 분석 엔진
 - [x] 자동 코멘트 생성
 
-### Phase 2 (현재)
-- [ ] 대시보드 UI
-- [ ] 리뷰 통계 및 인사이트
-- [ ] 커스텀 리뷰 규칙
+### Phase 2 ✅ (완료)
+- [x] 대시보드 백엔드 API
+- [x] 리뷰 통계 및 인사이트
+- [x] 커스텀 리뷰 규칙
 
 ### Phase 3
 - [ ] GitLab/Bitbucket 지원
