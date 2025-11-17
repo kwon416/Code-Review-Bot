@@ -36,7 +36,7 @@ public class CodeReviewService {
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .withModel("gpt-4-turbo-preview")
-                .withTemperature(0.3)
+                .withTemperature(0.3f)
                 .build();
 
             ChatResponse response = chatClient.call(new Prompt(prompt, options));
@@ -72,7 +72,7 @@ public class CodeReviewService {
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .withModel("gpt-4-turbo-preview")
-                .withTemperature(0.3)
+                .withTemperature(0.3f)
                 .build();
 
             ChatResponse response = chatClient.call(new Prompt(fullPrompt, options));
