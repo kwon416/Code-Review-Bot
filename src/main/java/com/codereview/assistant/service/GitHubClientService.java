@@ -71,30 +71,32 @@ public class GitHubClientService {
         log.info("Posting {} review comments for PR: {}/{}#{}",
             comments.size(), owner, repo, prNumber);
 
+        // Skip if no comments
+        if (comments == null || comments.isEmpty()) {
+            log.info("No review comments to post, skipping");
+            return;
+        }
+
         try {
             GitHub github = getGitHubClient(installationId);
             GHRepository repository = github.getRepository(owner + "/" + repo);
             GHPullRequest pullRequest = repository.getPullRequest(prNumber);
 
-            // Create review with comments
-            GHPullRequestReviewBuilder reviewBuilder = pullRequest.createReview()
-                .event(GHPullRequestReviewEvent.COMMENT)
-                .commitId(commitSha);
-
+            // Post individual comments as issue comments
+            // (Personal Access Token has limited support for PR Review API)
+            int successCount = 0;
             for (ReviewCommentRequest comment : comments) {
-                String body = formatCommentBody(comment);
-
-                if (comment.getLineNumber() != null) {
-                    reviewBuilder.comment(
-                        body,
-                        comment.getFilePath(),
-                        comment.getLineNumber()
-                    );
+                try {
+                    String body = formatCommentBodyWithLocation(comment);
+                    pullRequest.comment(body);
+                    successCount++;
+                } catch (IOException e) {
+                    log.warn("Failed to post individual comment: {}", e.getMessage());
+                    // Continue with other comments
                 }
             }
 
-            reviewBuilder.create();
-            log.info("Successfully posted review comments");
+            log.info("Successfully posted {}/{} review comments", successCount, comments.size());
         } catch (IOException e) {
             log.error("Failed to post review comments for PR: {}/{}#{}", owner, repo, prNumber, e);
             throw new GitHubApiException(
@@ -162,6 +164,41 @@ public class GitHubClientService {
 
     private String formatCommentBody(ReviewCommentRequest comment) {
         StringBuilder body = new StringBuilder();
+
+        // Add severity emoji
+        String emoji = switch (comment.getSeverity()) {
+            case "error" -> "🔴";
+            case "warning" -> "⚠️";
+            default -> "ℹ️";
+        };
+
+        body.append(emoji).append(" **").append(comment.getCategory().toUpperCase()).append("**\n\n");
+        body.append(comment.getMessage()).append("\n");
+
+        if (comment.getSuggestion() != null && !comment.getSuggestion().isEmpty()) {
+            body.append("\n**Suggestion:**\n").append(comment.getSuggestion()).append("\n");
+        }
+
+        if (comment.getCodeExample() != null && !comment.getCodeExample().isEmpty()) {
+            body.append("\n**Example:**\n```\n")
+                .append(comment.getCodeExample())
+                .append("\n```\n");
+        }
+
+        return body.toString();
+    }
+
+    private String formatCommentBodyWithLocation(ReviewCommentRequest comment) {
+        StringBuilder body = new StringBuilder();
+
+        // Add file location header
+        if (comment.getFilePath() != null) {
+            body.append("**📁 File:** `").append(comment.getFilePath()).append("`");
+            if (comment.getLineNumber() != null) {
+                body.append(" (Line ").append(comment.getLineNumber()).append(")");
+            }
+            body.append("\n\n");
+        }
 
         // Add severity emoji
         String emoji = switch (comment.getSeverity()) {

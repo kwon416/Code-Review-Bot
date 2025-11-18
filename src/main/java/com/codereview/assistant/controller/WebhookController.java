@@ -43,22 +43,27 @@ public class WebhookController {
         log.info("Received GitHub webhook event: {}", event);
 
         try {
-            // 1. Verify signature
+            // 1. Ignore non-pull_request events without signature verification
+            // (workflow_job, ping, etc. don't need processing)
+            if (!"pull_request".equals(event)) {
+                log.debug("Ignoring non-pull_request event: {}", event);
+                return ResponseEntity.ok("Event ignored");
+            }
+
+            // 2. Verify signature for pull_request events
             if (!webhookService.verifySignature(payload, signature)) {
-                log.warn("Invalid webhook signature");
+                log.warn("Invalid webhook signature for pull_request event");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Invalid signature");
             }
 
-            // 2. Parse event
+            // 3. Parse event
             GitHubWebhookPayload webhookPayload = objectMapper.readValue(
                 payload, GitHubWebhookPayload.class
             );
 
-            // 3. Handle pull request events
-            if ("pull_request".equals(event)) {
-                handlePullRequestEvent(webhookPayload);
-            }
+            // 4. Handle pull request events
+            handlePullRequestEvent(webhookPayload);
 
             return ResponseEntity.ok("Webhook processed successfully");
 

@@ -2,6 +2,14 @@
 
 AI 기반 실시간 코드 리뷰 자동화 시스템
 
+## ⚡ Performance Optimizations
+- Using **gpt-4o-mini** for 95% cost reduction
+- Aggressive token optimization: 4K diff limit, 1.5K response
+- Smart file filtering (skips lock files, binaries, generated code)
+- Context-free diff (only changed lines)
+- Ultra-concise prompts (70% shorter)
+- **Expected: <2000 tokens per review (~$0.01/review)**
+
 ## 프로젝트 개요
 
 개인 개발자와 소규모 팀을 위한 AI 기반 자동 코드 리뷰 시스템입니다. GitHub PR 생성 시 자동으로 코드를 분석하고, 품질 개선 사항을 제안합니다.

@@ -2,11 +2,12 @@ spring:
   application:
     name: code-review-assistant
 
+  # H2 인메모리 데이터베이스 사용
   datasource:
-    url: jdbc:postgresql://localhost:5432/codereview
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:codereview;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
@@ -14,35 +15,50 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: create-drop
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        dialect: org.hibernate.dialect.H2Dialect
     open-in-view: false
+    defer-datasource-initialization: true
+
+  # H2 Console 활성화 (개발용)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # SQL 초기화 (샘플 데이터 로딩 비활성화)
+  sql:
+    init:
+      mode: never
 
   flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+    enabled: false  # H2에서는 Flyway 비활성화
 
+  # Redis 자동 설정 비활성화
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD}
+      repositories:
+        enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
+  # RabbitMQ 자동 설정 비활성화
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME}
-    password: ${RABBITMQ_PASSWORD}
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY}
-      model: gpt-4-turbo-preview
+      api-key: ${OPENAI_API_KEY:sk-demo-key}
+      model: ${OPENAI_MODEL:gpt-4-turbo-preview}
       temperature: 0.3
 
   thymeleaf:
@@ -58,8 +74,8 @@ github:
   app:
     id: ${GITHUB_APP_ID:}
     private-key: ${GITHUB_PRIVATE_KEY:}
-    webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
-  token: ${GITHUB_TOKEN:}
+    webhook-secret: ${GITHUB_WEBHOOK_SECRET:test-secret}
+  token: ${GITHUB_TOKEN:demo-token}
 
 gitlab:
   api:
@@ -73,16 +89,14 @@ bitbucket:
   app:
     password: ${BITBUCKET_APP_PASSWORD:}
 
-app:
-  # Test mode: when true, uses fixed test responses instead of calling GPT API
-  # This allows testing the entire pipeline without incurring API costs
-  test-mode: true
-
 logging:
   level:
     root: INFO
     com.codereview.assistant: DEBUG
-    org.springframework.web: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
@@ -100,9 +114,9 @@ management:
         enabled: true
   health:
     redis:
-      enabled: true
+      enabled: false
     rabbit:
-      enabled: true
+      enabled: false
     db:
       enabled: true
   metrics:

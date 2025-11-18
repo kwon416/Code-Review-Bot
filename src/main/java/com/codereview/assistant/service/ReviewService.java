@@ -42,7 +42,7 @@ public class ReviewService {
                 .pullRequest(pullRequest)
                 .commitSha(commitSha)
                 .reviewStatus("in_progress")
-                .aiModel("gpt-4-turbo-preview")
+                .aiModel("gpt-4o-mini")
                 .build();
             review = reviewRepository.save(review);
             final Review savedReview = review;  // Make it effectively final for lambda

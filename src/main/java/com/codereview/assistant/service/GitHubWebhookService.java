@@ -27,6 +27,12 @@ public class GitHubWebhookService {
      * Verifies the GitHub webhook signature
      */
     public boolean verifySignature(String payload, String signature) {
+        // 로컬 개발 환경: secret이 없거나 "test-secret"인 경우 검증 스킵
+        if (webhookSecret == null || webhookSecret.isEmpty() || "test-secret".equals(webhookSecret)) {
+            log.debug("Webhook secret not configured - skipping signature verification (development mode)");
+            return true;
+        }
+
         if (signature == null || !signature.startsWith("sha256=")) {
             log.warn("Invalid signature format");
             return false;
