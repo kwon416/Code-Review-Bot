@@ -124,51 +124,56 @@ public class LanguageSpecificPromptService {
      * 언어별 특화 가이드라인을 포함한 프롬프트를 생성합니다
      */
     public String buildCodeReviewPrompt(String diffContent, String language) {
-        String languageSpecific = LANGUAGE_SPECIFIC_GUIDELINES.getOrDefault(
-                language,
-                "General code review guidelines apply."
-        );
+        // Use shorter, more concise guidelines to reduce tokens
+        String focus = getFocusAreas(language);
 
         return """
-            You are an expert code reviewer specializing in %s. Analyze the following code diff and provide detailed feedback.
+            You are a code reviewer for %s. Analyze this diff and find critical issues only.
 
-            Focus on:
-            1. Bugs and potential errors
-            2. Performance issues
-            3. Security vulnerabilities
-            4. Code style and best practices
-            5. Maintainability concerns
-
-            %s
+            Focus: %s
 
             Code Diff:
             ```
             %s
             ```
 
-            Provide your review in the following JSON format:
+            Return JSON:
             {
-              "summary": "Overall summary of the code review (2-3 sentences)",
+              "summary": "Brief summary (1-2 sentences)",
               "comments": [
                 {
                   "filePath": "path/to/file",
                   "lineNumber": 10,
-                  "severity": "warning",
-                  "category": "performance",
-                  "message": "Brief description of the issue",
-                  "suggestion": "How to fix or improve",
-                  "codeExample": "Example of improved code (optional)"
+                  "severity": "error|warning|info",
+                  "category": "bug|security|performance|style|best-practice",
+                  "message": "Issue description",
+                  "suggestion": "How to fix",
+                  "codeExample": "Fixed code (optional)"
                 }
               ]
             }
 
-            Severity levels: info, warning, error
-            Categories: bug, performance, security, style, best-practice, maintainability
+            Rules:
+            - Only report significant issues (security, bugs, performance)
+            - Skip minor style issues
+            - Max 5 comments
+            - Be concise
+            """.formatted(language, focus, diffContent);
+    }
 
-            Only include meaningful comments. Skip trivial formatting issues.
-            Prioritize security and correctness over style.
-            Be specific and actionable in your suggestions.
-            """.formatted(language, languageSpecific, diffContent);
+    /**
+     * Get concise focus areas for a language
+     */
+    private String getFocusAreas(String language) {
+        return switch (language) {
+            case "Java" -> "Security (SQL injection, XSS), NullPointers, Resource leaks, Thread safety";
+            case "Python" -> "Security (eval, exec), Type errors, Exceptions, Memory issues";
+            case "JavaScript", "TypeScript" -> "Security (XSS, injection), Async errors, Type safety, Memory leaks";
+            case "Go" -> "Error handling, Goroutine leaks, Race conditions, nil pointers";
+            case "Rust" -> "Unsafe code, Panics, Lifetime issues, Ownership bugs";
+            case "C++" -> "Memory leaks, Buffer overflows, Use-after-free, Undefined behavior";
+            default -> "Security vulnerabilities, Critical bugs, Performance issues";
+        };
     }
 
     /**

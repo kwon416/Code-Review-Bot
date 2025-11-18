@@ -26,6 +26,11 @@ public class CodeReviewService {
     private final ReviewRuleService reviewRuleService;
     private final LanguageSpecificPromptService languageSpecificPromptService;
 
+    // Use cheaper and faster model
+    private static final String AI_MODEL = "gpt-4o-mini";
+    private static final int MAX_DIFF_LENGTH = 6000; // Limit diff size to reduce tokens
+    private static final int MAX_RESPONSE_TOKENS = 2000; // Limit response tokens
+
     /**
      * Analyzes code changes and returns review comments
      */
@@ -33,11 +38,22 @@ public class CodeReviewService {
         log.info("Starting code analysis for language: {}", language);
 
         try {
-            String prompt = buildCodeReviewPrompt(diffContent, language);
+            // Truncate diff if too large to reduce token usage
+            String processedDiff = truncateDiff(diffContent);
+            int originalLength = diffContent.length();
+            int processedLength = processedDiff.length();
+
+            if (originalLength > processedLength) {
+                log.warn("Diff truncated from {} to {} characters to reduce token usage",
+                    originalLength, processedLength);
+            }
+
+            String prompt = buildCodeReviewPrompt(processedDiff, language);
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .withModel("gpt-4-turbo-preview")
+                .withModel(AI_MODEL)
                 .withTemperature(0.3f)
+                .withMaxTokens(MAX_RESPONSE_TOKENS)
                 .build();
 
             ChatResponse response = chatClient.call(new Prompt(prompt, options));
@@ -45,7 +61,7 @@ public class CodeReviewService {
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
 
-            log.info("AI analysis completed. Tokens used: {}", tokensUsed);
+            log.info("AI analysis completed. Model: {}, Tokens used: {}", AI_MODEL, tokensUsed);
 
             return parseCodeReviewResponse(content, tokensUsed);
 
@@ -66,14 +82,18 @@ public class CodeReviewService {
         log.info("Starting code analysis with {} custom rules", customRules.size());
 
         try {
+            // Truncate diff if too large
+            String processedDiff = truncateDiff(diffContent);
+
             // Build prompt with custom rules
-            String basePrompt = buildCodeReviewPrompt(diffContent, language);
+            String basePrompt = buildCodeReviewPrompt(processedDiff, language);
             String customPrompt = reviewRuleService.buildCustomPromptFromRules(customRules);
             String fullPrompt = basePrompt + customPrompt;
 
             OpenAiChatOptions options = OpenAiChatOptions.builder()
-                .withModel("gpt-4-turbo-preview")
+                .withModel(AI_MODEL)
                 .withTemperature(0.3f)
+                .withMaxTokens(MAX_RESPONSE_TOKENS)
                 .build();
 
             ChatResponse response = chatClient.call(new Prompt(fullPrompt, options));
@@ -81,7 +101,7 @@ public class CodeReviewService {
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
 
-            log.info("AI analysis with custom rules completed. Tokens used: {}", tokensUsed);
+            log.info("AI analysis with custom rules completed. Model: {}, Tokens used: {}", AI_MODEL, tokensUsed);
 
             return parseCodeReviewResponse(content, tokensUsed);
 
@@ -93,6 +113,52 @@ public class CodeReviewService {
                 .tokensUsed(0)
                 .build();
         }
+    }
+
+    /**
+     * Truncates diff to reduce token usage
+     * Prioritizes showing changes (+ and - lines) over context
+     */
+    private String truncateDiff(String diffContent) {
+        if (diffContent.length() <= MAX_DIFF_LENGTH) {
+            return diffContent;
+        }
+
+        // Extract only the important parts: changed files and actual changes
+        String[] lines = diffContent.split("\n");
+        StringBuilder truncated = new StringBuilder();
+        int charCount = 0;
+        boolean inDiff = false;
+
+        for (String line : lines) {
+            // Always include file headers
+            if (line.startsWith("diff --git") || line.startsWith("+++") || line.startsWith("---")) {
+                truncated.append(line).append("\n");
+                charCount += line.length() + 1;
+                inDiff = true;
+                continue;
+            }
+
+            // Include changed lines (+ or -)
+            if (line.startsWith("+") || line.startsWith("-")) {
+                truncated.append(line).append("\n");
+                charCount += line.length() + 1;
+
+                if (charCount >= MAX_DIFF_LENGTH) {
+                    truncated.append("\n... (diff truncated to reduce token usage) ...\n");
+                    break;
+                }
+                continue;
+            }
+
+            // Include @@ chunk headers
+            if (line.startsWith("@@")) {
+                truncated.append(line).append("\n");
+                charCount += line.length() + 1;
+            }
+        }
+
+        return truncated.toString();
     }
 
     private String buildCodeReviewPrompt(String diffContent, String language) {
