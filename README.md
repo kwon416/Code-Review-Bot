@@ -2,6 +2,11 @@
 
 AI 기반 실시간 코드 리뷰 자동화 시스템
 
+## 🧪 Test Mode
+- TEST_MODE enabled for debugging
+- Using gpt-4o-mini for 95% cost reduction
+- Fixed test responses for validation
+
 ## 프로젝트 개요
 
 개인 개발자와 소규모 팀을 위한 AI 기반 자동 코드 리뷰 시스템입니다. GitHub PR 생성 시 자동으로 코드를 분석하고, 품질 개선 사항을 제안합니다.
