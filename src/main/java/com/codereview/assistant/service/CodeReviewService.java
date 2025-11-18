@@ -31,6 +31,9 @@ public class CodeReviewService {
     private static final int MAX_DIFF_LENGTH = 6000; // Limit diff size to reduce tokens
     private static final int MAX_RESPONSE_TOKENS = 2000; // Limit response tokens
 
+    // TEMPORARY: Enable test mode to skip GPT API calls
+    private static final boolean TEST_MODE = true;
+
     /**
      * Analyzes code changes and returns review comments
      */
@@ -38,6 +41,15 @@ public class CodeReviewService {
         log.info("Starting code analysis for language: {}", language);
 
         try {
+            // TEMPORARY TEST MODE: Return fixed response instead of calling GPT API
+            if (TEST_MODE) {
+                log.warn("⚠️ TEST MODE ENABLED - Using fixed test response instead of GPT API");
+                String testResponse = getTestResponse();
+                CodeReviewResult result = parseCodeReviewResponse(testResponse, 100);
+                log.info("✅ TEST: Parsed {} comments from test response", result.getComments().size());
+                return result;
+            }
+
             // Truncate diff if too large to reduce token usage
             String processedDiff = truncateDiff(diffContent);
             int originalLength = diffContent.length();
@@ -86,6 +98,15 @@ public class CodeReviewService {
         log.info("Starting code analysis with {} custom rules", customRules.size());
 
         try {
+            // TEMPORARY TEST MODE: Return fixed response instead of calling GPT API
+            if (TEST_MODE) {
+                log.warn("⚠️ TEST MODE ENABLED - Using fixed test response instead of GPT API");
+                String testResponse = getTestResponse();
+                CodeReviewResult result = parseCodeReviewResponse(testResponse, 100);
+                log.info("✅ TEST: Parsed {} comments from test response", result.getComments().size());
+                return result;
+            }
+
             // Truncate diff if too large
             String processedDiff = truncateDiff(diffContent);
 
@@ -234,5 +255,44 @@ public class CodeReviewService {
             log.error("Failed to parse AI response. Response: {}", response, e);
             throw e;
         }
+    }
+
+    /**
+     * TEMPORARY: Returns a fixed test response for debugging
+     */
+    private String getTestResponse() {
+        return """
+            {
+              "summary": "🧪 TEST MODE: This is a fixed test response to verify comment posting works correctly.",
+              "comments": [
+                {
+                  "filePath": "src/main/java/com/codereview/assistant/service/CodeReviewService.java",
+                  "lineNumber": 35,
+                  "severity": "warning",
+                  "category": "test",
+                  "message": "TEST COMMENT #1: This is a test comment to verify GitHub API integration is working.",
+                  "suggestion": "This is just a test. No action needed.",
+                  "codeExample": "// This is a test code example"
+                },
+                {
+                  "filePath": "src/main/java/com/codereview/assistant/service/ReviewService.java",
+                  "lineNumber": 45,
+                  "severity": "info",
+                  "category": "test",
+                  "message": "TEST COMMENT #2: Verifying that multiple comments can be posted successfully.",
+                  "suggestion": "If you see this comment on GitHub PR, the integration is working!"
+                },
+                {
+                  "filePath": "README.md",
+                  "lineNumber": 1,
+                  "severity": "error",
+                  "category": "test",
+                  "message": "TEST COMMENT #3: Testing error severity display.",
+                  "suggestion": "This should appear with a red error icon.",
+                  "codeExample": "# Test Example\\nThis is just for testing"
+                }
+              ]
+            }
+            """;
     }
 }
