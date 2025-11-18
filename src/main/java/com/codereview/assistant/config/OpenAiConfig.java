@@ -51,4 +51,18 @@ public class OpenAiConfig {
             && !apiKey.equals("${OPENAI_API_KEY}")
             && apiKey.startsWith("sk-");
     }
+
+    public boolean isApiKeyFormatValid() {
+        return StringUtils.hasText(apiKey)
+            && !apiKey.equals("${OPENAI_API_KEY}")
+            && apiKey.startsWith("sk-");
+    }
+
+    public boolean hasApiKey() {
+        return StringUtils.hasText(apiKey) && !apiKey.equals("${OPENAI_API_KEY}");
+    }
+
+    public String getModel() {
+        return model;
+    }
 }
