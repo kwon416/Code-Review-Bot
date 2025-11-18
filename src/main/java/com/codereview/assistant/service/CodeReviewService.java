@@ -68,7 +68,22 @@ public class CodeReviewService {
                 .withMaxTokens(MAX_RESPONSE_TOKENS)
                 .build();
 
-            ChatResponse response = chatClient.call(new Prompt(prompt, options));
+            ChatResponse response;
+            try {
+                response = chatClient.call(new Prompt(prompt, options));
+            } catch (org.springframework.web.client.HttpClientErrorException e) {
+                // Client error (4xx) - likely authentication or invalid request
+                log.error("OpenAI API client error ({}): {}", e.getStatusCode(), e.getMessage());
+                throw new RuntimeException("OpenAI API authentication or request error: " + e.getMessage(), e);
+            } catch (org.springframework.web.client.HttpServerErrorException e) {
+                // Server error (5xx) - OpenAI API issue
+                log.error("OpenAI API server error ({}): {}", e.getStatusCode(), e.getMessage());
+                throw new RuntimeException("OpenAI API server error: " + e.getMessage(), e);
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                // Network error - timeout, connection refused, etc.
+                log.error("Network error connecting to OpenAI API: {}", e.getMessage());
+                throw new RuntimeException("Network error connecting to OpenAI API: " + e.getMessage(), e);
+            }
 
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
@@ -121,7 +136,22 @@ public class CodeReviewService {
                 .withMaxTokens(MAX_RESPONSE_TOKENS)
                 .build();
 
-            ChatResponse response = chatClient.call(new Prompt(fullPrompt, options));
+            ChatResponse response;
+            try {
+                response = chatClient.call(new Prompt(fullPrompt, options));
+            } catch (org.springframework.web.client.HttpClientErrorException e) {
+                // Client error (4xx) - likely authentication or invalid request
+                log.error("OpenAI API client error ({}): {}", e.getStatusCode(), e.getMessage());
+                throw new RuntimeException("OpenAI API authentication or request error: " + e.getMessage(), e);
+            } catch (org.springframework.web.client.HttpServerErrorException e) {
+                // Server error (5xx) - OpenAI API issue
+                log.error("OpenAI API server error ({}): {}", e.getStatusCode(), e.getMessage());
+                throw new RuntimeException("OpenAI API server error: " + e.getMessage(), e);
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                // Network error - timeout, connection refused, etc.
+                log.error("Network error connecting to OpenAI API: {}", e.getMessage());
+                throw new RuntimeException("Network error connecting to OpenAI API: " + e.getMessage(), e);
+            }
 
             String content = response.getResult().getOutput().getContent();
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
