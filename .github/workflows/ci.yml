@@ -147,6 +147,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: code-review-assistant:${{ github.sha }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
@@ -161,5 +162,10 @@ jobs:
       - name: Test Docker image
         if: success()
         run: |
-          docker images | grep code-review-assistant
-          echo "✅ Docker image built successfully"
+          if docker images | grep -q code-review-assistant; then
+            echo "✅ Docker image built successfully"
+            docker images | grep code-review-assistant
+          else
+            echo "❌ Docker image not found"
+            exit 1
+          fi
