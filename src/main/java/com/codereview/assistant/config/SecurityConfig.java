@@ -23,6 +23,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin()))  // H2 Console iframe 허용
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/webhook/**",
@@ -30,7 +32,12 @@ public class SecurityConfig {
                     "/api/rules/**",
                     "/actuator/**",
                     "/swagger-ui/**",
-                    "/v3/api-docs/**"
+                    "/v3/api-docs/**",
+                    "/h2-console/**",     // H2 Console 접근 허용
+                    "/",                   // 홈 페이지
+                    "/dashboard",          // 대시보드 페이지
+                    "/css/**",             // CSS 파일
+                    "/js/**"               // JavaScript 파일
                 ).permitAll()
                 .anyRequest().authenticated()
             );
