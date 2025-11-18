@@ -100,7 +100,7 @@ public class CodeReviewService {
         try {
             // TEMPORARY TEST MODE: Return fixed response instead of calling GPT API
             if (TEST_MODE) {
-                log.warn("⚠️ TEST MODE ENABLED - Using fixed test response instead of GPT API");
+                log.warn("⚠️ TEST MODE ENABLED - Using fixed test response instead of GPT API!!");
                 String testResponse = getTestResponse();
                 CodeReviewResult result = parseCodeReviewResponse(testResponse, 100);
                 log.info("✅ TEST: Parsed {} comments from test response", result.getComments().size());
