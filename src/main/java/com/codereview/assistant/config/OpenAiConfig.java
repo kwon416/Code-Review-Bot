@@ -38,12 +38,23 @@ public class OpenAiConfig {
             log.warn("=================================================");
             log.warn("OpenAI API Key format appears invalid");
             log.warn("Valid keys should start with 'sk-'");
-            log.warn("Current key starts with: {}", apiKey.substring(0, Math.min(10, apiKey.length())));
+            log.warn("Current key format: {}****", maskApiKey(apiKey));
             log.warn("=================================================");
         } else {
-            log.info("OpenAI API Key is configured (key length: {})", apiKey.length());
+            log.info("OpenAI API Key is configured (key: {}****)", maskApiKey(apiKey));
             log.info("Using model: {}", model);
         }
+    }
+
+    /**
+     * Masks API key for secure logging
+     * Shows only first 7 characters (sk-proj or sk-xxxx)
+     */
+    private String maskApiKey(String key) {
+        if (key == null || key.length() <= 7) {
+            return "***";
+        }
+        return key.substring(0, 7);
     }
 
     public boolean isConfigured() {

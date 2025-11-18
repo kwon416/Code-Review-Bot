@@ -121,29 +121,25 @@ public class LanguageSpecificPromptService {
     }
 
     /**
-     * 언어별 특화 가이드라인을 포함한 프롬프트를 생성합니다 (극도로 간결화)
+     * 언어별 특화 가이드라인을 포함한 프롬프트를 생성합니다 (토큰 최적화)
      */
     public String buildCodeReviewPrompt(String diffContent, String language) {
         String focus = getFocusAreas(language);
 
         return """
-            Review %s code. Focus: %s
+            %s 코드 리뷰. 중점: %s
 
-            **IMPORTANT: You MUST respond in Korean language. All messages, summaries, and suggestions must be written in Korean (한국어).**
+            **한국어로만 응답하세요.**
 
             Diff:
             ```
             %s
             ```
 
-            JSON format (모든 텍스트는 한국어로 작성):
-            {"summary":"1-2 문장으로 요약 (한국어)","comments":[{"filePath":"파일경로","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance|style","message":"문제 설명 (한국어)","suggestion":"개선 제안 (한국어)","codeExample":"코드 예시"}]}
+            JSON 형식:
+            {"summary":"요약","comments":[{"filePath":"","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance","message":"설명","suggestion":"제안"}]}
 
-            Rules:
-            - Max 5 most critical issues only. Skip minor style issues.
-            - All text fields (summary, message, suggestion) MUST be in Korean (한국어).
-            - Provide specific, actionable feedback.
-            - Include code examples when helpful.
+            규칙: 최대 5개 주요 이슈만. 사소한 스타일 제외.
             """.formatted(language, focus, diffContent);
     }
 

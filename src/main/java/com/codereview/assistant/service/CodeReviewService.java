@@ -33,10 +33,10 @@ public class CodeReviewService {
     private final LanguageSpecificPromptService languageSpecificPromptService;
     private final OpenAiConfig openAiConfig;
 
-    // Use cheaper and faster model
+    // Use cheaper and faster model with aggressive token optimization
     private static final String AI_MODEL = "gpt-4o-mini";
-    private static final int MAX_DIFF_LENGTH = 4000; // Reduced for token optimization
-    private static final int MAX_RESPONSE_TOKENS = 1500; // Reduced response tokens
+    private static final int MAX_DIFF_LENGTH = 2500; // Aggressive token reduction
+    private static final int MAX_RESPONSE_TOKENS = 800; // Minimal response tokens
 
     // Test mode: when true, returns fixed test response instead of calling GPT API
     @Value("${app.test-mode:true}")
@@ -283,19 +283,23 @@ public class CodeReviewService {
             lowerLine.contains("gemfile.lock") ||
             lowerLine.contains("poetry.lock") ||
             lowerLine.contains("cargo.lock") ||
-            lowerLine.contains("go.sum")) {
+            lowerLine.contains("go.sum") ||
+            lowerLine.contains("go.mod")) {
             return true;
         }
 
-        // Skip generated files
+        // Skip generated files and build outputs
         if (lowerLine.contains("/build/") ||
             lowerLine.contains("/dist/") ||
             lowerLine.contains("/target/") ||
             lowerLine.contains("/.gradle/") ||
             lowerLine.contains("/node_modules/") ||
             lowerLine.contains("/vendor/") ||
+            lowerLine.contains("/__pycache__/") ||
             lowerLine.contains(".min.js") ||
-            lowerLine.contains(".min.css")) {
+            lowerLine.contains(".min.css") ||
+            lowerLine.contains(".bundle.js") ||
+            lowerLine.contains(".bundle.css")) {
             return true;
         }
 
@@ -306,20 +310,44 @@ public class CodeReviewService {
             lowerLine.contains(".gif") ||
             lowerLine.contains(".svg") ||
             lowerLine.contains(".ico") ||
+            lowerLine.contains(".webp") ||
             lowerLine.contains(".pdf") ||
             lowerLine.contains(".zip") ||
+            lowerLine.contains(".tar") ||
+            lowerLine.contains(".gz") ||
             lowerLine.contains(".jar") ||
             lowerLine.contains(".war") ||
+            lowerLine.contains(".ear") ||
             lowerLine.contains(".exe") ||
             lowerLine.contains(".dll") ||
             lowerLine.contains(".so") ||
-            lowerLine.contains(".dylib")) {
+            lowerLine.contains(".dylib") ||
+            lowerLine.contains(".a") ||
+            lowerLine.contains(".o")) {
             return true;
         }
 
-        // Skip documentation images
-        if (lowerLine.contains("/docs/") &&
-            (lowerLine.contains(".png") || lowerLine.contains(".jpg"))) {
+        // Skip test snapshots and fixtures
+        if (lowerLine.contains("/__snapshots__/") ||
+            lowerLine.contains("/fixtures/") ||
+            lowerLine.contains("/test-data/") ||
+            lowerLine.contains(".snap")) {
+            return true;
+        }
+
+        // Skip configuration and metadata files
+        if (lowerLine.endsWith(".lock") ||
+            lowerLine.endsWith(".sum") ||
+            lowerLine.endsWith(".cache") ||
+            lowerLine.contains(".env.example") ||
+            lowerLine.contains(".gitignore") ||
+            lowerLine.contains(".dockerignore")) {
+            return true;
+        }
+
+        // Skip documentation images and assets
+        if ((lowerLine.contains("/docs/") || lowerLine.contains("/documentation/")) &&
+            (lowerLine.contains(".png") || lowerLine.contains(".jpg") || lowerLine.contains(".gif"))) {
             return true;
         }
 
