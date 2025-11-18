@@ -129,15 +129,21 @@ public class LanguageSpecificPromptService {
         return """
             Review %s code. Focus: %s
 
+            **IMPORTANT: You MUST respond in Korean language. All messages, summaries, and suggestions must be written in Korean (한국어).**
+
             Diff:
             ```
             %s
             ```
 
-            JSON format:
-            {"summary":"1-2 sentences","comments":[{"filePath":"","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance","message":"","suggestion":"","codeExample":""}]}
+            JSON format (모든 텍스트는 한국어로 작성):
+            {"summary":"1-2 문장으로 요약 (한국어)","comments":[{"filePath":"파일경로","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance|style","message":"문제 설명 (한국어)","suggestion":"개선 제안 (한국어)","codeExample":"코드 예시"}]}
 
-            Rules: Max 3 critical issues only. Skip style/minor issues.
+            Rules:
+            - Max 5 most critical issues only. Skip minor style issues.
+            - All text fields (summary, message, suggestion) MUST be in Korean (한국어).
+            - Provide specific, actionable feedback.
+            - Include code examples when helpful.
             """.formatted(language, focus, diffContent);
     }
 

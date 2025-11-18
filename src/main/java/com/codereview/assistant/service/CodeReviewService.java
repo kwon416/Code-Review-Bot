@@ -471,33 +471,33 @@ public class CodeReviewService {
     private String getTestResponse() {
         return """
             {
-              "summary": "🧪 TEST MODE: This is a fixed test response to verify comment posting works correctly.",
+              "summary": "🧪 테스트 모드: GitHub PR 코멘트 게시 기능이 정상적으로 작동하는지 확인하기 위한 고정 테스트 응답입니다.",
               "comments": [
                 {
                   "filePath": "src/main/java/com/codereview/assistant/service/CodeReviewService.java",
                   "lineNumber": 35,
                   "severity": "warning",
                   "category": "test",
-                  "message": "TEST COMMENT #1: This is a test comment to verify GitHub API integration is working.",
-                  "suggestion": "This is just a test. No action needed.",
-                  "codeExample": "// This is a test code example"
+                  "message": "테스트 코멘트 #1: GitHub API 연동이 정상적으로 작동하는지 확인하는 테스트 코멘트입니다.",
+                  "suggestion": "이것은 단순 테스트이므로 조치가 필요하지 않습니다.",
+                  "codeExample": "// 테스트 코드 예시입니다"
                 },
                 {
                   "filePath": "src/main/java/com/codereview/assistant/service/ReviewService.java",
                   "lineNumber": 45,
                   "severity": "info",
                   "category": "test",
-                  "message": "TEST COMMENT #2: Verifying that multiple comments can be posted successfully.",
-                  "suggestion": "If you see this comment on GitHub PR, the integration is working!"
+                  "message": "테스트 코멘트 #2: 여러 개의 코멘트를 성공적으로 게시할 수 있는지 확인합니다.",
+                  "suggestion": "GitHub PR에서 이 코멘트가 보인다면 연동이 정상적으로 작동하는 것입니다!"
                 },
                 {
                   "filePath": "README.md",
                   "lineNumber": 1,
                   "severity": "error",
                   "category": "test",
-                  "message": "TEST COMMENT #3: Testing error severity display.",
-                  "suggestion": "This should appear with a red error icon.",
-                  "codeExample": "# Test Example\\nThis is just for testing"
+                  "message": "테스트 코멘트 #3: Error 심각도 표시를 테스트합니다.",
+                  "suggestion": "이 코멘트는 빨간색 에러 아이콘과 함께 표시되어야 합니다.",
+                  "codeExample": "# 테스트 예시\\n이것은 테스트용입니다"
                 }
               ]
             }
