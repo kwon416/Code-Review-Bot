@@ -40,6 +40,7 @@ dependencies {
 
     // Database
     implementation 'org.postgresql:postgresql'
+    runtimeOnly 'com.h2database:h2'
     implementation 'org.flywaydb:flyway-core'
 
     // GitHub Integration
