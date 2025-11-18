@@ -58,9 +58,7 @@ public class OpenAiConfig {
     }
 
     public boolean isConfigured() {
-        return StringUtils.hasText(apiKey)
-            && !apiKey.equals("${OPENAI_API_KEY}")
-            && apiKey.startsWith("sk-");
+        return isApiKeyFormatValid();
     }
 
     public boolean isApiKeyFormatValid() {
