@@ -16,8 +16,8 @@ jobs:
         env:
           POSTGRES_DB: codereview_test
           POSTGRES_USER: postgres
-          # ggignore: Generic Password (CI test environment only)
-          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'postgres' }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+          POSTGRES_HOST_AUTH_METHOD: ${{ secrets.CI_POSTGRES_PASSWORD && 'md5' || 'trust' }}
         ports:
           - 5432:5432
         options: >-
@@ -38,10 +38,6 @@ jobs:
 
       rabbitmq:
         image: rabbitmq:3-management-alpine
-        env:
-          # ggignore: Generic Password (CI test environment only)
-          RABBITMQ_DEFAULT_USER: ${{ secrets.CI_RABBITMQ_USER || 'guest' }}
-          RABBITMQ_DEFAULT_PASS: ${{ secrets.CI_RABBITMQ_PASS || 'guest' }}
         ports:
           - 5672:5672
           - 15672:15672
@@ -68,35 +64,31 @@ jobs:
       - name: Build with Gradle (skip tests)
         env:
           DB_USERNAME: postgres
-          # ggignore: Generic Password (CI test environment only)
-          DB_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'postgres' }}
+          DB_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           REDIS_PASSWORD: ""
           RABBITMQ_HOST: localhost
           RABBITMQ_PORT: 5672
-          # ggignore: Generic Password (CI test environment only)
-          RABBITMQ_USERNAME: ${{ secrets.CI_RABBITMQ_USER || 'guest' }}
-          RABBITMQ_PASSWORD: ${{ secrets.CI_RABBITMQ_PASS || 'guest' }}
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'sk-test-key-placeholder' }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || '' }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: ./gradlew build -x test --no-daemon --stacktrace
 
       - name: Run tests
         env:
           DB_USERNAME: postgres
-          # ggignore: Generic Password (CI test environment only)
-          DB_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'postgres' }}
+          DB_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           REDIS_PASSWORD: ""
           RABBITMQ_HOST: localhost
           RABBITMQ_PORT: 5672
-          # ggignore: Generic Password (CI test environment only)
-          RABBITMQ_USERNAME: ${{ secrets.CI_RABBITMQ_USER || 'guest' }}
-          RABBITMQ_PASSWORD: ${{ secrets.CI_RABBITMQ_PASS || 'guest' }}
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'sk-test-key-placeholder' }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || '' }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: ./gradlew test --no-daemon --stacktrace
         continue-on-error: true
 
