@@ -1,5 +1,6 @@
 package com.codereview.assistant.service;
 
+import com.codereview.assistant.config.OpenAiConfig;
 import com.codereview.assistant.domain.ReviewRule;
 import com.codereview.assistant.dto.CodeReviewResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,7 +14,11 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
 
+import java.net.HttpRetryException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +31,7 @@ public class CodeReviewService {
     private final ObjectMapper objectMapper;
     private final ReviewRuleService reviewRuleService;
     private final LanguageSpecificPromptService languageSpecificPromptService;
+    private final OpenAiConfig openAiConfig;
 
     // Use cheaper and faster model
     private static final String AI_MODEL = "gpt-4o-mini";
@@ -41,6 +47,17 @@ public class CodeReviewService {
      */
     public CodeReviewResult analyzeCode(String diffContent, String language) {
         log.info("Starting code analysis for language: {}", language);
+
+        // Validate OpenAI configuration first
+        if (!openAiConfig.isConfigured()) {
+            String errorMsg = "OpenAI API Key is not configured. Please set OPENAI_API_KEY environment variable.";
+            log.error(errorMsg);
+            return CodeReviewResult.builder()
+                .comments(new ArrayList<>())
+                .summary(errorMsg)
+                .tokensUsed(0)
+                .build();
+        }
 
         try {
             // TEST MODE: Return fixed response instead of calling GPT API
@@ -98,11 +115,13 @@ public class CodeReviewService {
 
             return result;
 
+        } catch (RestClientException e) {
+            return handleRestClientException(e);
         } catch (Exception e) {
-            log.error("Error during code analysis", e);
+            log.error("Unexpected error during code analysis", e);
             return CodeReviewResult.builder()
                 .comments(new ArrayList<>())
-                .summary("Error occurred during code analysis: " + e.getMessage())
+                .summary("Unexpected error occurred during code analysis: " + e.getMessage())
                 .tokensUsed(0)
                 .build();
         }
@@ -113,6 +132,17 @@ public class CodeReviewService {
      */
     public CodeReviewResult analyzeCodeWithRules(String diffContent, String language, List<ReviewRule> customRules) {
         log.info("Starting code analysis with {} custom rules", customRules.size());
+
+        // Validate OpenAI configuration first
+        if (!openAiConfig.isConfigured()) {
+            String errorMsg = "OpenAI API Key is not configured. Please set OPENAI_API_KEY environment variable.";
+            log.error(errorMsg);
+            return CodeReviewResult.builder()
+                .comments(new ArrayList<>())
+                .summary(errorMsg)
+                .tokensUsed(0)
+                .build();
+        }
 
         try {
             // TEST MODE: Return fixed response instead of calling GPT API
@@ -166,11 +196,13 @@ public class CodeReviewService {
 
             return result;
 
+        } catch (RestClientException e) {
+            return handleRestClientException(e);
         } catch (Exception e) {
-            log.error("Error during code analysis with custom rules", e);
+            log.error("Unexpected error during code analysis with custom rules", e);
             return CodeReviewResult.builder()
                 .comments(new ArrayList<>())
-                .summary("Error occurred during code analysis: " + e.getMessage())
+                .summary("Unexpected error occurred during code analysis: " + e.getMessage())
                 .tokensUsed(0)
                 .build();
         }
@@ -296,6 +328,75 @@ public class CodeReviewService {
 
     private String buildCodeReviewPrompt(String diffContent, String language) {
         return languageSpecificPromptService.buildCodeReviewPrompt(diffContent, language);
+    }
+
+    /**
+     * Handles RestClient exceptions and returns appropriate error messages
+     */
+    private CodeReviewResult handleRestClientException(RestClientException e) {
+        String errorMessage;
+
+        // Check for HttpRetryException in the cause chain (authentication error)
+        if (containsCauseType(e, HttpRetryException.class)) {
+
+            errorMessage = "OpenAI API Authentication Failed. " +
+                          "This usually indicates an invalid or missing API key. " +
+                          "Please verify your OPENAI_API_KEY environment variable is set correctly. " +
+                          "Make sure the API key starts with 'sk-' and is valid.";
+            log.error("HTTP Retry Exception (Authentication): {}", e.getMessage(), e);
+
+        } else if (e.getMessage() != null &&
+            (e.getMessage().contains("authentication") ||
+             e.getMessage().contains("Unauthorized") ||
+             e.getMessage().contains("401"))) {
+
+            errorMessage = "OpenAI API Authentication Failed. " +
+                          "Please verify your OPENAI_API_KEY environment variable is set correctly. " +
+                          "Make sure the API key starts with 'sk-' and is valid.";
+            log.error("Authentication error with OpenAI API: {}", e.getMessage());
+
+        } else if (e.getMessage() != null &&
+                   (e.getMessage().contains("429") || e.getMessage().contains("rate limit"))) {
+
+            errorMessage = "OpenAI API rate limit exceeded. Please try again later.";
+            log.error("Rate limit error: {}", e.getMessage());
+
+        } else if (e.getMessage() != null &&
+                   (e.getMessage().contains("quota") || e.getMessage().contains("insufficient_quota"))) {
+
+            errorMessage = "OpenAI API quota exceeded. Please check your OpenAI account billing and usage.";
+            log.error("Quota error: {}", e.getMessage());
+
+        } else if (e instanceof ResourceAccessException) {
+
+            errorMessage = "Failed to connect to OpenAI API. Please check your network connection.";
+            log.error("Network error: {}", e.getMessage());
+
+        } else {
+
+            errorMessage = "OpenAI API error: " + e.getMessage();
+            log.error("RestClient error during code analysis: {}", e.getMessage(), e);
+        }
+
+        return CodeReviewResult.builder()
+            .comments(new ArrayList<>())
+            .summary(errorMessage)
+            .tokensUsed(0)
+            .build();
+    }
+
+    /**
+     * Checks if the exception's cause chain contains a specific exception type
+     */
+    private boolean containsCauseType(Throwable throwable, Class<? extends Throwable> causeType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (causeType.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private CodeReviewResult parseCodeReviewResponse(String response, int tokensUsed)
