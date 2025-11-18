@@ -28,11 +28,11 @@ public class CodeReviewService {
 
     // Use cheaper and faster model
     private static final String AI_MODEL = "gpt-4o-mini";
-    private static final int MAX_DIFF_LENGTH = 6000; // Limit diff size to reduce tokens
-    private static final int MAX_RESPONSE_TOKENS = 2000; // Limit response tokens
+    private static final int MAX_DIFF_LENGTH = 4000; // Reduced for token optimization
+    private static final int MAX_RESPONSE_TOKENS = 1500; // Reduced response tokens
 
     // TEMPORARY: Enable test mode to skip GPT API calls
-    private static final boolean TEST_MODE = true;
+    private static final boolean TEST_MODE = false; // Disabled - using real GPT API now
 
     /**
      * Analyzes code changes and returns review comments
@@ -145,22 +145,37 @@ public class CodeReviewService {
     }
 
     /**
-     * Truncates diff to reduce token usage
-     * Prioritizes showing changes (+ and - lines) over context
+     * Truncates diff to reduce token usage significantly
+     * Prioritizes important code changes and excludes noise
      */
     private String truncateDiff(String diffContent) {
-        if (diffContent.length() <= MAX_DIFF_LENGTH) {
-            return diffContent;
-        }
-
         // Extract only the important parts: changed files and actual changes
         String[] lines = diffContent.split("\n");
         StringBuilder truncated = new StringBuilder();
         int charCount = 0;
+        String currentFile = null;
+        boolean skipCurrentFile = false;
 
         for (String line : lines) {
-            // Always include file headers
-            if (line.startsWith("diff --git") || line.startsWith("+++") || line.startsWith("---")) {
+            // Check for file headers
+            if (line.startsWith("diff --git")) {
+                currentFile = line;
+                skipCurrentFile = shouldSkipFile(line);
+
+                if (!skipCurrentFile) {
+                    truncated.append(line).append("\n");
+                    charCount += line.length() + 1;
+                }
+                continue;
+            }
+
+            // Skip if we're ignoring this file
+            if (skipCurrentFile) {
+                continue;
+            }
+
+            // Include file path headers (only for non-skipped files)
+            if (line.startsWith("+++") || line.startsWith("---")) {
                 truncated.append(line).append("\n");
                 charCount += line.length() + 1;
                 continue;
@@ -173,19 +188,78 @@ public class CodeReviewService {
                 continue;
             }
 
-            // Include changed lines (+ or -, but not +++ or ---)
+            // Only include changed lines (+ or -)
+            // Skip context lines (no prefix) to save tokens
             if (line.startsWith("+") || line.startsWith("-")) {
                 truncated.append(line).append("\n");
                 charCount += line.length() + 1;
 
                 if (charCount >= MAX_DIFF_LENGTH) {
-                    truncated.append("\n... (diff truncated to reduce token usage) ...\n");
+                    truncated.append("\n... (truncated - ").append(lines.length).append(" total lines) ...\n");
                     break;
                 }
             }
         }
 
         return truncated.toString();
+    }
+
+    /**
+     * Determines if a file should be skipped in diff analysis
+     * Excludes files that don't need code review (binary, lock files, etc.)
+     */
+    private boolean shouldSkipFile(String diffLine) {
+        String lowerLine = diffLine.toLowerCase();
+
+        // Skip lock files and dependency manifests
+        if (lowerLine.contains("package-lock.json") ||
+            lowerLine.contains("yarn.lock") ||
+            lowerLine.contains("pnpm-lock.yaml") ||
+            lowerLine.contains("composer.lock") ||
+            lowerLine.contains("gemfile.lock") ||
+            lowerLine.contains("poetry.lock") ||
+            lowerLine.contains("cargo.lock") ||
+            lowerLine.contains("go.sum")) {
+            return true;
+        }
+
+        // Skip generated files
+        if (lowerLine.contains("/build/") ||
+            lowerLine.contains("/dist/") ||
+            lowerLine.contains("/target/") ||
+            lowerLine.contains("/.gradle/") ||
+            lowerLine.contains("/node_modules/") ||
+            lowerLine.contains("/vendor/") ||
+            lowerLine.contains(".min.js") ||
+            lowerLine.contains(".min.css")) {
+            return true;
+        }
+
+        // Skip binary and media files
+        if (lowerLine.contains(".png") ||
+            lowerLine.contains(".jpg") ||
+            lowerLine.contains(".jpeg") ||
+            lowerLine.contains(".gif") ||
+            lowerLine.contains(".svg") ||
+            lowerLine.contains(".ico") ||
+            lowerLine.contains(".pdf") ||
+            lowerLine.contains(".zip") ||
+            lowerLine.contains(".jar") ||
+            lowerLine.contains(".war") ||
+            lowerLine.contains(".exe") ||
+            lowerLine.contains(".dll") ||
+            lowerLine.contains(".so") ||
+            lowerLine.contains(".dylib")) {
+            return true;
+        }
+
+        // Skip documentation images
+        if (lowerLine.contains("/docs/") &&
+            (lowerLine.contains(".png") || lowerLine.contains(".jpg"))) {
+            return true;
+        }
+
+        return false;
     }
 
     private String buildCodeReviewPrompt(String diffContent, String language) {

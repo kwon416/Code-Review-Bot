@@ -121,43 +121,23 @@ public class LanguageSpecificPromptService {
     }
 
     /**
-     * 언어별 특화 가이드라인을 포함한 프롬프트를 생성합니다
+     * 언어별 특화 가이드라인을 포함한 프롬프트를 생성합니다 (극도로 간결화)
      */
     public String buildCodeReviewPrompt(String diffContent, String language) {
-        // Use shorter, more concise guidelines to reduce tokens
         String focus = getFocusAreas(language);
 
         return """
-            You are a code reviewer for %s. Analyze this diff and find critical issues only.
+            Review %s code. Focus: %s
 
-            Focus: %s
-
-            Code Diff:
+            Diff:
             ```
             %s
             ```
 
-            Return JSON:
-            {
-              "summary": "Brief summary (1-2 sentences)",
-              "comments": [
-                {
-                  "filePath": "path/to/file",
-                  "lineNumber": 10,
-                  "severity": "error|warning|info",
-                  "category": "bug|security|performance|style|best-practice",
-                  "message": "Issue description",
-                  "suggestion": "How to fix",
-                  "codeExample": "Fixed code (optional)"
-                }
-              ]
-            }
+            JSON format:
+            {"summary":"1-2 sentences","comments":[{"filePath":"","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance","message":"","suggestion":"","codeExample":""}]}
 
-            Rules:
-            - Only report significant issues (security, bugs, performance)
-            - Skip minor style issues
-            - Max 5 comments
-            - Be concise
+            Rules: Max 3 critical issues only. Skip style/minor issues.
             """.formatted(language, focus, diffContent);
     }
 
