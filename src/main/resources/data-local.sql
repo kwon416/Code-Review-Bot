@@ -53,15 +53,16 @@ VALUES
 
 -- 샘플 Review Rules 데이터
 INSERT INTO review_rules (repository_id, name, description, rule_type, rule_config, enabled, priority, target_files, created_at, updated_at)
-VALUES
-  (NULL, '보안: 하드코딩된 비밀번호 검사', '코드에 하드코딩된 비밀번호나 API 키가 있는지 검사합니다.', 'code_pattern',
-   '{"patterns": ["password\\s*=\\s*[\"\'].*[\"\']", "api[_-]?key\\s*=\\s*[\"\'].*[\"\']"], "severity": "error"}',
-   true, 100, '**/*', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+VALUES (NULL, '보안: 하드코딩된 비밀번호 검사', '코드에 하드코딩된 비밀번호나 API 키가 있는지 검사합니다.', 'code_pattern',
+   '{"patterns": ["password=", "apikey="], "severity": "error"}',
+   true, 100, '**/*', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-  (NULL, '성능: N+1 쿼리 감지', 'JPA에서 N+1 쿼리 문제를 검사합니다.', 'custom_prompt',
-   '{"prompt": "Check for N+1 query problems in JPA repositories and suggest using fetch joins or @EntityGraph", "severity": "warning"}',
-   true, 80, '**/*Repository.java', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+INSERT INTO review_rules (repository_id, name, description, rule_type, rule_config, enabled, priority, target_files, created_at, updated_at)
+VALUES (NULL, '성능: N+1 쿼리 감지', 'JPA에서 N+1 쿼리 문제를 검사합니다.', 'custom_prompt',
+   '{"prompt": "Check for N+1 query problems", "severity": "warning"}',
+   true, 80, '**/*Repository.java', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-  (1, '프로젝트별: 로깅 규칙', 'System.out.println 대신 로거를 사용하는지 검사합니다.', 'code_pattern',
-   '{"patterns": ["System\\.out\\.println", "System\\.err\\.println"], "severity": "warning"}',
+INSERT INTO review_rules (repository_id, name, description, rule_type, rule_config, enabled, priority, target_files, created_at, updated_at)
+VALUES (1, '프로젝트별: 로깅 규칙', 'System.out.println 대신 로거를 사용하는지 검사합니다.', 'code_pattern',
+   '{"patterns": ["System.out.println", "System.err.println"], "severity": "warning"}',
    true, 70, '**/*.java', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

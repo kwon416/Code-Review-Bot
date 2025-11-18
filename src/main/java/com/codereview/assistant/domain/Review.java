@@ -41,7 +41,7 @@ public class Review {
     private Integer totalComments = 0;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "severity_counts", columnDefinition = "jsonb")
+    @Column(name = "severity_counts")
     private Map<String, Integer> severityCounts;
 
     @Column(name = "ai_model", length = 50)

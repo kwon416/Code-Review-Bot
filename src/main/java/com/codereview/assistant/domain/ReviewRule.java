@@ -37,7 +37,7 @@ public class ReviewRule {
     private String ruleType; // file_pattern, code_pattern, complexity, custom_prompt
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "rule_config", columnDefinition = "jsonb", nullable = false)
+    @Column(name = "rule_config", nullable = false)
     private Map<String, Object> ruleConfig;
 
     @Column(nullable = false)
