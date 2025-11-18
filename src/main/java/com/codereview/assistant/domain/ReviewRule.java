@@ -1,11 +1,10 @@
 package com.codereview.assistant.domain;
 
+import com.codereview.assistant.converter.JsonMapConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -36,7 +35,7 @@ public class ReviewRule {
     @Column(name = "rule_type", nullable = false, length = 50)
     private String ruleType; // file_pattern, code_pattern, complexity, custom_prompt
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Convert(converter = JsonMapConverter.class)
     @Column(name = "rule_config", nullable = false)
     private Map<String, Object> ruleConfig;
 

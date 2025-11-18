@@ -1,11 +1,10 @@
 package com.codereview.assistant.domain;
 
+import com.codereview.assistant.converter.JsonIntegerMapConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public class Review {
     @Builder.Default
     private Integer totalComments = 0;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Convert(converter = JsonIntegerMapConverter.class)
     @Column(name = "severity_counts")
     private Map<String, Integer> severityCounts;
 
