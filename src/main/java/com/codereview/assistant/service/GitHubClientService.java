@@ -71,30 +71,40 @@ public class GitHubClientService {
         log.info("Posting {} review comments for PR: {}/{}#{}",
             comments.size(), owner, repo, prNumber);
 
+        // Skip if no comments
+        if (comments == null || comments.isEmpty()) {
+            log.info("No review comments to post, skipping");
+            return;
+        }
+
         try {
             GitHub github = getGitHubClient(installationId);
             GHRepository repository = github.getRepository(owner + "/" + repo);
             GHPullRequest pullRequest = repository.getPullRequest(prNumber);
 
-            // Create review with comments
-            GHPullRequestReviewBuilder reviewBuilder = pullRequest.createReview()
-                .event(GHPullRequestReviewEvent.COMMENT)
-                .commitId(commitSha);
-
+            // Post individual comments instead of a review
+            // (Personal Access Token doesn't support PR Review API)
+            int successCount = 0;
             for (ReviewCommentRequest comment : comments) {
-                String body = formatCommentBody(comment);
+                try {
+                    String body = formatCommentBody(comment);
 
-                if (comment.getLineNumber() != null) {
-                    reviewBuilder.comment(
-                        body,
-                        comment.getFilePath(),
-                        comment.getLineNumber()
-                    );
+                    if (comment.getLineNumber() != null && comment.getFilePath() != null) {
+                        // Post as individual line comment
+                        pullRequest.comment(body, commitSha, comment.getFilePath(), comment.getLineNumber());
+                        successCount++;
+                    } else {
+                        // Post as general comment if no line number
+                        pullRequest.comment(body);
+                        successCount++;
+                    }
+                } catch (IOException e) {
+                    log.warn("Failed to post individual comment: {}", e.getMessage());
+                    // Continue with other comments
                 }
             }
 
-            reviewBuilder.create();
-            log.info("Successfully posted review comments");
+            log.info("Successfully posted {}/{} review comments", successCount, comments.size());
         } catch (IOException e) {
             log.error("Failed to post review comments for PR: {}/{}#{}", owner, repo, prNumber, e);
             throw new GitHubApiException(
