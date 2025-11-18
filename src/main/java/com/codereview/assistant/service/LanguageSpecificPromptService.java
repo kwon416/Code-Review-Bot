@@ -137,9 +137,14 @@ public class LanguageSpecificPromptService {
             ```
 
             JSON 형식:
-            {"summary":"요약","comments":[{"filePath":"","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance","message":"설명","suggestion":"제안"}]}
+            {"summary":"요약 또는 '이슈 없음'","comments":[{"filePath":"","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance","message":"설명","suggestion":"제안"}]}
 
-            규칙: 최대 5개 주요 이슈만. 사소한 스타일 제외.
+            중요한 규칙:
+            - 실제 심각한 문제만 지적 (버그, 보안 취약점, 심각한 성능 이슈)
+            - 이슈가 없으면 comments를 빈 배열로 반환
+            - 관련된 여러 이슈는 하나의 코멘트로 통합
+            - 최대 3개 이슈만 (억지로 찾지 말 것)
+            - 사소한 스타일, 명명 규칙, 주석 등은 무시
             """.formatted(language, focus, diffContent);
     }
 

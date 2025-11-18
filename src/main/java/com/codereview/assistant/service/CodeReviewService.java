@@ -499,33 +499,15 @@ public class CodeReviewService {
     private String getTestResponse() {
         return """
             {
-              "summary": "🧪 테스트 모드: GitHub PR 코멘트 게시 기능이 정상적으로 작동하는지 확인하기 위한 고정 테스트 응답입니다.",
+              "summary": "🧪 테스트 모드: GitHub PR 연동 테스트 응답입니다. 코멘트 게시 기능이 정상적으로 작동하는지 확인하세요.",
               "comments": [
                 {
                   "filePath": "src/main/java/com/codereview/assistant/service/CodeReviewService.java",
-                  "lineNumber": 35,
-                  "severity": "warning",
-                  "category": "test",
-                  "message": "테스트 코멘트 #1: GitHub API 연동이 정상적으로 작동하는지 확인하는 테스트 코멘트입니다.",
-                  "suggestion": "이것은 단순 테스트이므로 조치가 필요하지 않습니다.",
-                  "codeExample": "// 테스트 코드 예시입니다"
-                },
-                {
-                  "filePath": "src/main/java/com/codereview/assistant/service/ReviewService.java",
-                  "lineNumber": 45,
+                  "lineNumber": 50,
                   "severity": "info",
                   "category": "test",
-                  "message": "테스트 코멘트 #2: 여러 개의 코멘트를 성공적으로 게시할 수 있는지 확인합니다.",
-                  "suggestion": "GitHub PR에서 이 코멘트가 보인다면 연동이 정상적으로 작동하는 것입니다!"
-                },
-                {
-                  "filePath": "README.md",
-                  "lineNumber": 1,
-                  "severity": "error",
-                  "category": "test",
-                  "message": "테스트 코멘트 #3: Error 심각도 표시를 테스트합니다.",
-                  "suggestion": "이 코멘트는 빨간색 에러 아이콘과 함께 표시되어야 합니다.",
-                  "codeExample": "# 테스트 예시\\n이것은 테스트용입니다"
+                  "message": "GitHub PR 코멘트 게시 기능 테스트입니다. 이 코멘트가 PR에 정상적으로 표시되면 연동이 성공한 것입니다.",
+                  "suggestion": "테스트용 코멘트이므로 별도 조치가 필요하지 않습니다. GitHub PR에서 이 내용이 보이는지 확인하세요."
                 }
               ]
             }
