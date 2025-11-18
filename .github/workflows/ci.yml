@@ -64,16 +64,16 @@ jobs:
       - name: Build and test with Gradle
         env:
           DB_USERNAME: postgres
-          DB_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || '' }}
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           REDIS_PASSWORD: ""
           RABBITMQ_HOST: localhost
           RABBITMQ_PORT: 5672
-          RABBITMQ_USERNAME: guest
-          RABBITMQ_PASSWORD: guest
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'sk-test-key-placeholder' }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME || 'guest' }}
+          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD || 'guest' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'test-dummy-key-for-ci' }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || '' }}
           GRADLE_OPTS: -Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true
         run: ./gradlew build --parallel --build-cache --no-daemon
         continue-on-error: true
