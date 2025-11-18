@@ -30,11 +30,10 @@ spring:
       enabled: true
       path: /h2-console
 
-  # SQL 초기화
+  # SQL 초기화 (샘플 데이터 로딩 비활성화)
   sql:
     init:
-      mode: always
-      data-locations: classpath:data-local.sql
+      mode: never
 
   flyway:
     enabled: false  # H2에서는 Flyway 비활성화

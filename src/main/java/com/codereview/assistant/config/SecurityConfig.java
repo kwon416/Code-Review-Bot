@@ -37,7 +37,8 @@ public class SecurityConfig {
                     "/",                   // 홈 페이지
                     "/dashboard",          // 대시보드 페이지
                     "/css/**",             // CSS 파일
-                    "/js/**"               // JavaScript 파일
+                    "/js/**",              // JavaScript 파일
+                    "/favicon.ico"         // Favicon
                 ).permitAll()
                 .anyRequest().authenticated()
             );

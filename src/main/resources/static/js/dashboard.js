@@ -15,6 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDashboardData();
         loadRecentReviews();
     }, 30000);
+
+    // Modal close event
+    const modal = document.getElementById('reviewModal');
+    const closeBtn = document.querySelector('.modal-close');
+
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+
+    window.onclick = (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
 });
 
 // Load dashboard statistics
@@ -163,7 +177,7 @@ function displayReviews(reviews) {
     }
 
     reviewList.innerHTML = reviews.map(review => `
-        <div class="review-item">
+        <div class="review-item" onclick="showReviewDetail(${review.id})" style="cursor: pointer;">
             <div class="review-header">
                 <span class="review-repo">${review.repositoryOwner}/${review.repositoryName}</span>
                 <span class="review-time">${formatDate(review.createdAt)}</span>
@@ -173,6 +187,9 @@ function displayReviews(reviews) {
                 <span>코멘트: ${review.totalComments || 0}</span>
                 ${formatSeverityCounts(review.severityCounts)}
                 <span>처리 시간: ${formatTime(review.processingTimeMs)}</span>
+            </div>
+            <div class="review-action">
+                <span class="view-detail">상세보기 →</span>
             </div>
         </div>
     `).join('');
@@ -238,4 +255,106 @@ function formatDate(dateString) {
 // Show error message
 function showError(message) {
     console.error(message);
+}
+
+// Show review detail
+async function showReviewDetail(reviewId) {
+    const modal = document.getElementById('reviewModal');
+    const content = document.getElementById('reviewDetailContent');
+
+    modal.style.display = 'block';
+    content.innerHTML = '<div class="loading">로딩 중...</div>';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/dashboard/reviews/${reviewId}`);
+        if (!response.ok) throw new Error('Failed to fetch review detail');
+
+        const review = await response.json();
+        content.innerHTML = renderReviewDetail(review);
+    } catch (error) {
+        console.error('Error loading review detail:', error);
+        content.innerHTML = '<div class="error">리뷰 상세 정보를 불러오는데 실패했습니다.</div>';
+    }
+}
+
+// Render review detail
+function renderReviewDetail(review) {
+    const comments = review.comments || [];
+    const severityCounts = review.severityCounts || {};
+
+    return `
+        <div class="review-detail">
+            <div class="review-detail-header">
+                <h2>리뷰 상세 정보</h2>
+                <div class="review-detail-meta">
+                    <span class="badge">${review.reviewStatus}</span>
+                    <span>${formatDate(review.createdAt)}</span>
+                </div>
+            </div>
+
+            <div class="review-detail-section">
+                <h3>📦 Repository</h3>
+                <p><strong>${review.repository.owner}/${review.repository.name}</strong></p>
+            </div>
+
+            <div class="review-detail-section">
+                <h3>🔀 Pull Request</h3>
+                <p><strong>PR #${review.pullRequest.number}</strong>: ${review.pullRequest.title}</p>
+                <p><small>작성자: ${review.pullRequest.author}</small></p>
+                ${review.pullRequest.description ? `<p>${review.pullRequest.description}</p>` : ''}
+            </div>
+
+            <div class="review-detail-section">
+                <h3>📊 리뷰 통계</h3>
+                <div class="stat-grid">
+                    <div><strong>총 코멘트:</strong> ${review.totalComments || 0}</div>
+                    <div><strong>처리 시간:</strong> ${formatTime(review.processingTimeMs)}</div>
+                    <div><strong>AI 모델:</strong> ${review.aiModel || 'N/A'}</div>
+                    <div><strong>토큰 사용:</strong> ${review.tokensUsed || 0}</div>
+                </div>
+                <div class="severity-summary">
+                    ${formatSeverityCounts(severityCounts)}
+                </div>
+            </div>
+
+            ${comments.length > 0 ? `
+                <div class="review-detail-section">
+                    <h3>💬 코멘트 (${comments.length}개)</h3>
+                    <div class="comments-list">
+                        ${comments.map(comment => `
+                            <div class="comment-item severity-${comment.severity}">
+                                <div class="comment-header">
+                                    <span class="badge badge-${comment.severity}">${comment.severity}</span>
+                                    <span class="badge">${comment.category}</span>
+                                    <span class="comment-file">${comment.filePath}:${comment.lineNumber}</span>
+                                </div>
+                                <div class="comment-message">${comment.message}</div>
+                                ${comment.suggestion ? `<div class="comment-suggestion">💡 ${comment.suggestion}</div>` : ''}
+                                ${comment.codeExample ? `<pre class="code-example">${escapeHtml(comment.codeExample)}</pre>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '<p>코멘트가 없습니다.</p>'}
+
+            ${review.errorMessage ? `
+                <div class="review-detail-section error-section">
+                    <h3>⚠️ 오류</h3>
+                    <p>${review.errorMessage}</p>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Escape HTML
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
