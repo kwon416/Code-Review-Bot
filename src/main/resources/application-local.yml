@@ -58,8 +58,8 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:demo-key}
-      model: gpt-4-turbo-preview
+      api-key: ${OPENAI_API_KEY:sk-demo-key}
+      model: ${OPENAI_MODEL:gpt-4-turbo-preview}
       temperature: 0.3
 
   thymeleaf:
@@ -75,8 +75,8 @@ github:
   app:
     id: ${GITHUB_APP_ID:}
     private-key: ${GITHUB_PRIVATE_KEY:}
-    webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
-  token: ${GITHUB_TOKEN:}
+    webhook-secret: ${GITHUB_WEBHOOK_SECRET:test-secret}
+  token: ${GITHUB_TOKEN:demo-token}
 
 gitlab:
   api:
