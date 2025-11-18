@@ -82,22 +82,14 @@ public class GitHubClientService {
             GHRepository repository = github.getRepository(owner + "/" + repo);
             GHPullRequest pullRequest = repository.getPullRequest(prNumber);
 
-            // Post individual comments instead of a review
-            // (Personal Access Token doesn't support PR Review API)
+            // Post individual comments as issue comments
+            // (Personal Access Token has limited support for PR Review API)
             int successCount = 0;
             for (ReviewCommentRequest comment : comments) {
                 try {
-                    String body = formatCommentBody(comment);
-
-                    if (comment.getLineNumber() != null && comment.getFilePath() != null) {
-                        // Post as individual line comment
-                        pullRequest.comment(body, commitSha, comment.getFilePath(), comment.getLineNumber());
-                        successCount++;
-                    } else {
-                        // Post as general comment if no line number
-                        pullRequest.comment(body);
-                        successCount++;
-                    }
+                    String body = formatCommentBodyWithLocation(comment);
+                    pullRequest.comment(body);
+                    successCount++;
                 } catch (IOException e) {
                     log.warn("Failed to post individual comment: {}", e.getMessage());
                     // Continue with other comments
@@ -172,6 +164,41 @@ public class GitHubClientService {
 
     private String formatCommentBody(ReviewCommentRequest comment) {
         StringBuilder body = new StringBuilder();
+
+        // Add severity emoji
+        String emoji = switch (comment.getSeverity()) {
+            case "error" -> "🔴";
+            case "warning" -> "⚠️";
+            default -> "ℹ️";
+        };
+
+        body.append(emoji).append(" **").append(comment.getCategory().toUpperCase()).append("**\n\n");
+        body.append(comment.getMessage()).append("\n");
+
+        if (comment.getSuggestion() != null && !comment.getSuggestion().isEmpty()) {
+            body.append("\n**Suggestion:**\n").append(comment.getSuggestion()).append("\n");
+        }
+
+        if (comment.getCodeExample() != null && !comment.getCodeExample().isEmpty()) {
+            body.append("\n**Example:**\n```\n")
+                .append(comment.getCodeExample())
+                .append("\n```\n");
+        }
+
+        return body.toString();
+    }
+
+    private String formatCommentBodyWithLocation(ReviewCommentRequest comment) {
+        StringBuilder body = new StringBuilder();
+
+        // Add file location header
+        if (comment.getFilePath() != null) {
+            body.append("**📁 File:** `").append(comment.getFilePath()).append("`");
+            if (comment.getLineNumber() != null) {
+                body.append(" (Line ").append(comment.getLineNumber()).append(")");
+            }
+            body.append("\n\n");
+        }
 
         // Add severity emoji
         String emoji = switch (comment.getSeverity()) {
