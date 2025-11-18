@@ -276,11 +276,23 @@ footer {
     font-weight: bold;
     cursor: pointer;
     line-height: 20px;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color 0.3s ease, transform 0.2s ease;
 }
 
 .modal-close:hover,
 .modal-close:focus {
     color: #667eea;
+    transform: scale(1.1);
+    outline: none;
+}
+
+.modal-close:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .review-detail-header {
@@ -408,34 +420,257 @@ footer {
     font-size: 0.9rem;
 }
 
+/* Responsive Design - Tablet */
+@media (max-width: 1024px) {
+    .container {
+        max-width: 100%;
+        padding: 1.5rem;
+    }
+
+    .charts-section {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .stat-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .modal-content {
+        margin: 5% auto;
+        max-width: 95%;
+    }
+}
+
+/* Responsive Design - Mobile */
 @media (max-width: 768px) {
     .container {
         padding: 1rem;
     }
 
+    header {
+        padding: 1.5rem 1rem;
+    }
+
     header h1 {
-        font-size: 1.8rem;
+        font-size: 1.75rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    section {
+        padding: 1.5rem 1rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    h3 {
+        font-size: 1.2rem;
     }
 
     .stat-cards {
         grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
     }
 
     .charts-section {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .chart-container {
+        padding: 1rem;
     }
 
     .activity-stats {
         flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .activity-item {
+        padding: 0.75rem;
+    }
+
+    .review-item {
+        padding: 1rem;
+    }
+
+    .review-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .review-repo {
+        font-size: 1rem;
+    }
+
+    .review-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .links {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
     }
 
     .modal-content {
-        margin: 1rem;
+        margin: 0.5rem;
         padding: 1rem;
         max-width: 100%;
+        max-height: 95vh;
+    }
+
+    .modal-close {
+        font-size: 24px;
+    }
+
+    .review-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .review-detail-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
     }
 
     .stat-grid {
         grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .severity-summary {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .comment-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .comment-file {
+        word-break: break-all;
+    }
+
+    .code-example {
+        font-size: 0.75rem;
+        overflow-x: scroll;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.9rem;
+    }
+
+    .stat-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        padding: 1.25rem;
+    }
+
+    .stat-value {
+        font-size: 2.25rem;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    section {
+        padding: 1rem;
+    }
+
+    .review-item {
+        padding: 0.875rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .btn {
+        padding: 0.625rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .review-item {
+        min-height: 60px;
+    }
+
+    .modal-close {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: white;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+
+    .modal,
+    .btn,
+    footer {
+        display: none;
+    }
+
+    section {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
     }
 }
