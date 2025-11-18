@@ -177,7 +177,7 @@ function displayReviews(reviews) {
     }
 
     reviewList.innerHTML = reviews.map(review => `
-        <div class="review-item" onclick="showReviewDetail(${review.id})" style="cursor: pointer;">
+        <div class="review-item" onclick="showReviewDetail(${review.reviewId})" style="cursor: pointer;">
             <div class="review-header">
                 <span class="review-repo">${review.repositoryOwner}/${review.repositoryName}</span>
                 <span class="review-time">${formatDate(review.createdAt)}</span>
