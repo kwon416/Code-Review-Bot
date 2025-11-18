@@ -136,18 +136,23 @@ public class CodeReviewService {
         String[] lines = diffContent.split("\n");
         StringBuilder truncated = new StringBuilder();
         int charCount = 0;
-        boolean inDiff = false;
 
         for (String line : lines) {
             // Always include file headers
             if (line.startsWith("diff --git") || line.startsWith("+++") || line.startsWith("---")) {
                 truncated.append(line).append("\n");
                 charCount += line.length() + 1;
-                inDiff = true;
                 continue;
             }
 
-            // Include changed lines (+ or -)
+            // Include @@ chunk headers
+            if (line.startsWith("@@")) {
+                truncated.append(line).append("\n");
+                charCount += line.length() + 1;
+                continue;
+            }
+
+            // Include changed lines (+ or -, but not +++ or ---)
             if (line.startsWith("+") || line.startsWith("-")) {
                 truncated.append(line).append("\n");
                 charCount += line.length() + 1;
@@ -156,13 +161,6 @@ public class CodeReviewService {
                     truncated.append("\n... (diff truncated to reduce token usage) ...\n");
                     break;
                 }
-                continue;
-            }
-
-            // Include @@ chunk headers
-            if (line.startsWith("@@")) {
-                truncated.append(line).append("\n");
-                charCount += line.length() + 1;
             }
         }
 
