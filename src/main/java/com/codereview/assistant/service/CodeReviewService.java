@@ -11,6 +11,7 @@ import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,8 +32,9 @@ public class CodeReviewService {
     private static final int MAX_DIFF_LENGTH = 4000; // Reduced for token optimization
     private static final int MAX_RESPONSE_TOKENS = 1500; // Reduced response tokens
 
-    // TEMPORARY: Enable test mode to skip GPT API calls
-    private static final boolean TEST_MODE = false; // Disabled - using real GPT API now
+    // Test mode: when true, returns fixed test response instead of calling GPT API
+    @Value("${app.test-mode:true}")
+    private boolean testMode;
 
     /**
      * Analyzes code changes and returns review comments
@@ -41,8 +43,8 @@ public class CodeReviewService {
         log.info("Starting code analysis for language: {}", language);
 
         try {
-            // TEMPORARY TEST MODE: Return fixed response instead of calling GPT API
-            if (TEST_MODE) {
+            // TEST MODE: Return fixed response instead of calling GPT API
+            if (testMode) {
                 log.warn("⚠️ TEST MODE ENABLED - Using fixed test response instead of GPT API");
                 String testResponse = getTestResponse();
                 CodeReviewResult result = parseCodeReviewResponse(testResponse, 100);
@@ -113,9 +115,9 @@ public class CodeReviewService {
         log.info("Starting code analysis with {} custom rules", customRules.size());
 
         try {
-            // TEMPORARY TEST MODE: Return fixed response instead of calling GPT API
-            if (TEST_MODE) {
-                log.warn("⚠️ TEST MODE ENABLED - Using fixed test response instead of GPT API!!!");
+            // TEST MODE: Return fixed response instead of calling GPT API
+            if (testMode) {
+                log.warn("⚠️ TEST MODE ENABLED - Using fixed test response instead of GPT API");
                 String testResponse = getTestResponse();
                 CodeReviewResult result = parseCodeReviewResponse(testResponse, 100);
                 log.info("✅ TEST: Parsed {} comments from test response", result.getComments().size());
@@ -362,7 +364,8 @@ public class CodeReviewService {
     }
 
     /**
-     * TEMPORARY: Returns a fixed test response for debugging
+     * Returns a fixed test response for debugging without calling GPT API
+     * Used when app.test-mode=true
      */
     private String getTestResponse() {
         return """

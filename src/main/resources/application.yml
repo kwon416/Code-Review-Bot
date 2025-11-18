@@ -73,6 +73,11 @@ bitbucket:
   app:
     password: ${BITBUCKET_APP_PASSWORD:}
 
+app:
+  # Test mode: when true, uses fixed test responses instead of calling GPT API
+  # This allows testing the entire pipeline without incurring API costs
+  test-mode: true
+
 logging:
   level:
     root: INFO
