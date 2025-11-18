@@ -62,8 +62,12 @@ public class CodeReviewService {
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
 
             log.info("AI analysis completed. Model: {}, Tokens used: {}", AI_MODEL, tokensUsed);
+            log.debug("AI response content: {}", content);
 
-            return parseCodeReviewResponse(content, tokensUsed);
+            CodeReviewResult result = parseCodeReviewResponse(content, tokensUsed);
+            log.info("Parsed {} comments from AI response", result.getComments().size());
+
+            return result;
 
         } catch (Exception e) {
             log.error("Error during code analysis", e);
@@ -102,8 +106,12 @@ public class CodeReviewService {
             int tokensUsed = response.getMetadata().getUsage().getTotalTokens().intValue();
 
             log.info("AI analysis with custom rules completed. Model: {}, Tokens used: {}", AI_MODEL, tokensUsed);
+            log.debug("AI response content: {}", content);
 
-            return parseCodeReviewResponse(content, tokensUsed);
+            CodeReviewResult result = parseCodeReviewResponse(content, tokensUsed);
+            log.info("Parsed {} comments from AI response", result.getComments().size());
+
+            return result;
 
         } catch (Exception e) {
             log.error("Error during code analysis with custom rules", e);
@@ -167,46 +175,66 @@ public class CodeReviewService {
 
     private CodeReviewResult parseCodeReviewResponse(String response, int tokensUsed)
             throws JsonProcessingException {
-        // Extract JSON from markdown code blocks if present
-        String jsonContent = response;
-        if (response.contains("```json")) {
-            jsonContent = response.substring(
-                response.indexOf("```json") + 7,
-                response.lastIndexOf("```")
-            ).trim();
-        } else if (response.contains("```")) {
-            jsonContent = response.substring(
-                response.indexOf("```") + 3,
-                response.lastIndexOf("```")
-            ).trim();
-        }
-
-        JsonNode rootNode = objectMapper.readTree(jsonContent);
-
-        List<CodeReviewResult.ReviewComment> comments = new ArrayList<>();
-        JsonNode commentsNode = rootNode.get("comments");
-        if (commentsNode != null && commentsNode.isArray()) {
-            for (JsonNode commentNode : commentsNode) {
-                CodeReviewResult.ReviewComment comment = CodeReviewResult.ReviewComment.builder()
-                    .filePath(commentNode.get("filePath").asText())
-                    .lineNumber(commentNode.has("lineNumber") ?
-                        commentNode.get("lineNumber").asInt() : null)
-                    .severity(commentNode.get("severity").asText())
-                    .category(commentNode.get("category").asText())
-                    .message(commentNode.get("message").asText())
-                    .suggestion(commentNode.has("suggestion") ?
-                        commentNode.get("suggestion").asText() : null)
-                    .codeExample(commentNode.has("codeExample") ?
-                        commentNode.get("codeExample").asText() : null)
-                    .build();
-                comments.add(comment);
+        try {
+            // Extract JSON from markdown code blocks if present
+            String jsonContent = response;
+            if (response.contains("```json")) {
+                jsonContent = response.substring(
+                    response.indexOf("```json") + 7,
+                    response.lastIndexOf("```")
+                ).trim();
+            } else if (response.contains("```")) {
+                jsonContent = response.substring(
+                    response.indexOf("```") + 3,
+                    response.lastIndexOf("```")
+                ).trim();
             }
-        }
 
-        return CodeReviewResult.builder()
-            .comments(comments)
-            .summary(rootNode.has("summary") ? rootNode.get("summary").asText() : "")
-            .tokensUsed(tokensUsed)
-            .build();
+            log.debug("Extracted JSON content: {}", jsonContent);
+
+            JsonNode rootNode = objectMapper.readTree(jsonContent);
+
+            List<CodeReviewResult.ReviewComment> comments = new ArrayList<>();
+            JsonNode commentsNode = rootNode.get("comments");
+
+            if (commentsNode == null) {
+                log.warn("No 'comments' field found in AI response");
+            } else if (!commentsNode.isArray()) {
+                log.warn("'comments' field is not an array in AI response");
+            } else {
+                log.debug("Found {} comments in AI response", commentsNode.size());
+
+                for (JsonNode commentNode : commentsNode) {
+                    try {
+                        CodeReviewResult.ReviewComment comment = CodeReviewResult.ReviewComment.builder()
+                            .filePath(commentNode.get("filePath").asText())
+                            .lineNumber(commentNode.has("lineNumber") ?
+                                commentNode.get("lineNumber").asInt() : null)
+                            .severity(commentNode.get("severity").asText())
+                            .category(commentNode.get("category").asText())
+                            .message(commentNode.get("message").asText())
+                            .suggestion(commentNode.has("suggestion") ?
+                                commentNode.get("suggestion").asText() : null)
+                            .codeExample(commentNode.has("codeExample") ?
+                                commentNode.get("codeExample").asText() : null)
+                            .build();
+                        comments.add(comment);
+                    } catch (Exception e) {
+                        log.error("Failed to parse individual comment: {}", commentNode, e);
+                    }
+                }
+            }
+
+            String summary = rootNode.has("summary") ? rootNode.get("summary").asText() : "No summary provided";
+
+            return CodeReviewResult.builder()
+                .comments(comments)
+                .summary(summary)
+                .tokensUsed(tokensUsed)
+                .build();
+        } catch (Exception e) {
+            log.error("Failed to parse AI response. Response: {}", response, e);
+            throw e;
+        }
     }
 }
