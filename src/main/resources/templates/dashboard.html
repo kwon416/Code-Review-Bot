@@ -2,7 +2,9 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="AI 기반 실시간 코드 리뷰 대시보드">
+    <meta name="theme-color" content="#667eea">
     <title>CodeReview AI Assistant - Dashboard</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/dashboard.css">
@@ -10,12 +12,12 @@
 </head>
 <body>
     <div class="container">
-        <header>
+        <header role="banner">
             <h1>🤖 CodeReview AI Assistant</h1>
             <p class="subtitle">AI 기반 실시간 코드 리뷰 대시보드</p>
         </header>
 
-        <main>
+        <main role="main">
             <!-- 전체 통계 -->
             <section class="stats-overview">
                 <h2>📊 전체 통계</h2>
@@ -82,30 +84,33 @@
             <section class="api-links">
                 <h2>🔗 API 문서</h2>
                 <div class="links">
-                    <a href="/swagger-ui/index.html" target="_blank" class="btn btn-primary">
+                    <a href="/swagger-ui/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary" aria-label="Swagger UI 문서 열기">
                         Swagger UI
                     </a>
-                    <a href="/actuator/health" target="_blank" class="btn btn-secondary">
-                        Health Check
+                    <a href="/api/health/openai/quick" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" aria-label="OpenAI Health Check">
+                        OpenAI Health
                     </a>
-                    <a href="/actuator/metrics" target="_blank" class="btn btn-secondary">
+                    <a href="/actuator/health" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" aria-label="시스템 Health Check">
+                        System Health
+                    </a>
+                    <a href="/actuator/metrics" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" aria-label="시스템 Metrics">
                         Metrics
                     </a>
                 </div>
             </section>
         </main>
 
-        <footer>
+        <footer role="contentinfo">
             <p>&copy; 2025 CodeReview AI Assistant. MIT License.</p>
         </footer>
     </div>
 
     <!-- 리뷰 상세보기 모달 -->
-    <div id="reviewModal" class="modal">
+    <div id="reviewModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
         <div class="modal-content">
-            <span class="modal-close">&times;</span>
+            <button class="modal-close" aria-label="모달 닫기">&times;</button>
             <div id="reviewDetailContent">
-                <div class="loading">로딩 중...</div>
+                <div class="loading" role="status" aria-live="polite">로딩 중...</div>
             </div>
         </div>
     </div>

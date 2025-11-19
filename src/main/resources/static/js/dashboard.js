@@ -20,16 +20,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('reviewModal');
     const closeBtn = document.querySelector('.modal-close');
 
-    closeBtn.onclick = () => {
-        modal.style.display = 'none';
-    };
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            closeModal();
+        };
+    }
 
     window.onclick = (event) => {
         if (event.target === modal) {
-            modal.style.display = 'none';
+            closeModal();
         }
     };
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && modal.style.display === 'block') {
+            closeModal();
+        }
+    });
 });
+
+// Close modal function
+function closeModal() {
+    const modal = document.getElementById('reviewModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
 
 // Load dashboard statistics
 async function loadDashboardData() {
@@ -263,7 +279,8 @@ async function showReviewDetail(reviewId) {
     const content = document.getElementById('reviewDetailContent');
 
     modal.style.display = 'block';
-    content.innerHTML = '<div class="loading">로딩 중...</div>';
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
+    content.innerHTML = '<div class="loading" role="status" aria-live="polite">로딩 중...</div>';
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/dashboard/reviews/${reviewId}`);
@@ -271,9 +288,12 @@ async function showReviewDetail(reviewId) {
 
         const review = await response.json();
         content.innerHTML = renderReviewDetail(review);
+
+        // Focus on modal for accessibility
+        modal.querySelector('.modal-close').focus();
     } catch (error) {
         console.error('Error loading review detail:', error);
-        content.innerHTML = '<div class="error">리뷰 상세 정보를 불러오는데 실패했습니다.</div>';
+        content.innerHTML = '<div class="error" role="alert">리뷰 상세 정보를 불러오는데 실패했습니다.</div>';
     }
 }
 

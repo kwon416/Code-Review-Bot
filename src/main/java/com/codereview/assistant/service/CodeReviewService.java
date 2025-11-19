@@ -1,5 +1,6 @@
 package com.codereview.assistant.service;
 
+import com.codereview.assistant.config.OpenAiConfig;
 import com.codereview.assistant.domain.ReviewRule;
 import com.codereview.assistant.dto.CodeReviewResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,7 +14,11 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
 
+import java.net.HttpRetryException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,11 +31,12 @@ public class CodeReviewService {
     private final ObjectMapper objectMapper;
     private final ReviewRuleService reviewRuleService;
     private final LanguageSpecificPromptService languageSpecificPromptService;
+    private final OpenAiConfig openAiConfig;
 
-    // Use cheaper and faster model
+    // Use cheaper and faster model with aggressive token optimization
     private static final String AI_MODEL = "gpt-4o-mini";
-    private static final int MAX_DIFF_LENGTH = 4000; // Reduced for token optimization
-    private static final int MAX_RESPONSE_TOKENS = 1500; // Reduced response tokens
+    private static final int MAX_DIFF_LENGTH = 2500; // Aggressive token reduction
+    private static final int MAX_RESPONSE_TOKENS = 800; // Minimal response tokens
 
     // Test mode: when true, returns fixed test response instead of calling GPT API
     @Value("${app.test-mode:true}")
@@ -41,6 +47,17 @@ public class CodeReviewService {
      */
     public CodeReviewResult analyzeCode(String diffContent, String language) {
         log.info("Starting code analysis for language: {}", language);
+
+        // Validate OpenAI configuration first
+        if (!openAiConfig.isConfigured()) {
+            String errorMsg = "OpenAI API Key is not configured. Please set OPENAI_API_KEY environment variable.";
+            log.error(errorMsg);
+            return CodeReviewResult.builder()
+                .comments(new ArrayList<>())
+                .summary(errorMsg)
+                .tokensUsed(0)
+                .build();
+        }
 
         try {
             // TEST MODE: Return fixed response instead of calling GPT API
@@ -98,11 +115,13 @@ public class CodeReviewService {
 
             return result;
 
+        } catch (RestClientException e) {
+            return handleRestClientException(e);
         } catch (Exception e) {
-            log.error("Error during code analysis", e);
+            log.error("Unexpected error during code analysis", e);
             return CodeReviewResult.builder()
                 .comments(new ArrayList<>())
-                .summary("Error occurred during code analysis: " + e.getMessage())
+                .summary("Unexpected error occurred during code analysis: " + e.getMessage())
                 .tokensUsed(0)
                 .build();
         }
@@ -113,6 +132,17 @@ public class CodeReviewService {
      */
     public CodeReviewResult analyzeCodeWithRules(String diffContent, String language, List<ReviewRule> customRules) {
         log.info("Starting code analysis with {} custom rules", customRules.size());
+
+        // Validate OpenAI configuration first
+        if (!openAiConfig.isConfigured()) {
+            String errorMsg = "OpenAI API Key is not configured. Please set OPENAI_API_KEY environment variable.";
+            log.error(errorMsg);
+            return CodeReviewResult.builder()
+                .comments(new ArrayList<>())
+                .summary(errorMsg)
+                .tokensUsed(0)
+                .build();
+        }
 
         try {
             // TEST MODE: Return fixed response instead of calling GPT API
@@ -166,11 +196,13 @@ public class CodeReviewService {
 
             return result;
 
+        } catch (RestClientException e) {
+            return handleRestClientException(e);
         } catch (Exception e) {
-            log.error("Error during code analysis with custom rules", e);
+            log.error("Unexpected error during code analysis with custom rules", e);
             return CodeReviewResult.builder()
                 .comments(new ArrayList<>())
-                .summary("Error occurred during code analysis: " + e.getMessage())
+                .summary("Unexpected error occurred during code analysis: " + e.getMessage())
                 .tokensUsed(0)
                 .build();
         }
@@ -251,19 +283,23 @@ public class CodeReviewService {
             lowerLine.contains("gemfile.lock") ||
             lowerLine.contains("poetry.lock") ||
             lowerLine.contains("cargo.lock") ||
-            lowerLine.contains("go.sum")) {
+            lowerLine.contains("go.sum") ||
+            lowerLine.contains("go.mod")) {
             return true;
         }
 
-        // Skip generated files
+        // Skip generated files and build outputs
         if (lowerLine.contains("/build/") ||
             lowerLine.contains("/dist/") ||
             lowerLine.contains("/target/") ||
             lowerLine.contains("/.gradle/") ||
             lowerLine.contains("/node_modules/") ||
             lowerLine.contains("/vendor/") ||
+            lowerLine.contains("/__pycache__/") ||
             lowerLine.contains(".min.js") ||
-            lowerLine.contains(".min.css")) {
+            lowerLine.contains(".min.css") ||
+            lowerLine.contains(".bundle.js") ||
+            lowerLine.contains(".bundle.css")) {
             return true;
         }
 
@@ -274,20 +310,44 @@ public class CodeReviewService {
             lowerLine.contains(".gif") ||
             lowerLine.contains(".svg") ||
             lowerLine.contains(".ico") ||
+            lowerLine.contains(".webp") ||
             lowerLine.contains(".pdf") ||
             lowerLine.contains(".zip") ||
+            lowerLine.contains(".tar") ||
+            lowerLine.contains(".gz") ||
             lowerLine.contains(".jar") ||
             lowerLine.contains(".war") ||
+            lowerLine.contains(".ear") ||
             lowerLine.contains(".exe") ||
             lowerLine.contains(".dll") ||
             lowerLine.contains(".so") ||
-            lowerLine.contains(".dylib")) {
+            lowerLine.contains(".dylib") ||
+            lowerLine.contains(".a") ||
+            lowerLine.contains(".o")) {
             return true;
         }
 
-        // Skip documentation images
-        if (lowerLine.contains("/docs/") &&
-            (lowerLine.contains(".png") || lowerLine.contains(".jpg"))) {
+        // Skip test snapshots and fixtures
+        if (lowerLine.contains("/__snapshots__/") ||
+            lowerLine.contains("/fixtures/") ||
+            lowerLine.contains("/test-data/") ||
+            lowerLine.contains(".snap")) {
+            return true;
+        }
+
+        // Skip configuration and metadata files
+        if (lowerLine.endsWith(".lock") ||
+            lowerLine.endsWith(".sum") ||
+            lowerLine.endsWith(".cache") ||
+            lowerLine.contains(".env.example") ||
+            lowerLine.contains(".gitignore") ||
+            lowerLine.contains(".dockerignore")) {
+            return true;
+        }
+
+        // Skip documentation images and assets
+        if ((lowerLine.contains("/docs/") || lowerLine.contains("/documentation/")) &&
+            (lowerLine.contains(".png") || lowerLine.contains(".jpg") || lowerLine.contains(".gif"))) {
             return true;
         }
 
@@ -296,6 +356,75 @@ public class CodeReviewService {
 
     private String buildCodeReviewPrompt(String diffContent, String language) {
         return languageSpecificPromptService.buildCodeReviewPrompt(diffContent, language);
+    }
+
+    /**
+     * Handles RestClient exceptions and returns appropriate error messages
+     */
+    private CodeReviewResult handleRestClientException(RestClientException e) {
+        String errorMessage;
+
+        // Check for HttpRetryException in the cause chain (authentication error)
+        if (containsCauseType(e, HttpRetryException.class)) {
+
+            errorMessage = "OpenAI API Authentication Failed. " +
+                          "This usually indicates an invalid or missing API key. " +
+                          "Please verify your OPENAI_API_KEY environment variable is set correctly. " +
+                          "Make sure the API key starts with 'sk-' and is valid.";
+            log.error("HTTP Retry Exception (Authentication): {}", e.getMessage(), e);
+
+        } else if (e.getMessage() != null &&
+            (e.getMessage().contains("authentication") ||
+             e.getMessage().contains("Unauthorized") ||
+             e.getMessage().contains("401"))) {
+
+            errorMessage = "OpenAI API Authentication Failed. " +
+                          "Please verify your OPENAI_API_KEY environment variable is set correctly. " +
+                          "Make sure the API key starts with 'sk-' and is valid.";
+            log.error("Authentication error with OpenAI API: {}", e.getMessage());
+
+        } else if (e.getMessage() != null &&
+                   (e.getMessage().contains("429") || e.getMessage().contains("rate limit"))) {
+
+            errorMessage = "OpenAI API rate limit exceeded. Please try again later.";
+            log.error("Rate limit error: {}", e.getMessage());
+
+        } else if (e.getMessage() != null &&
+                   (e.getMessage().contains("quota") || e.getMessage().contains("insufficient_quota"))) {
+
+            errorMessage = "OpenAI API quota exceeded. Please check your OpenAI account billing and usage.";
+            log.error("Quota error: {}", e.getMessage());
+
+        } else if (e instanceof ResourceAccessException) {
+
+            errorMessage = "Failed to connect to OpenAI API. Please check your network connection.";
+            log.error("Network error: {}", e.getMessage());
+
+        } else {
+
+            errorMessage = "OpenAI API error: " + e.getMessage();
+            log.error("RestClient error during code analysis: {}", e.getMessage(), e);
+        }
+
+        return CodeReviewResult.builder()
+            .comments(new ArrayList<>())
+            .summary(errorMessage)
+            .tokensUsed(0)
+            .build();
+    }
+
+    /**
+     * Checks if the exception's cause chain contains a specific exception type
+     */
+    private boolean containsCauseType(Throwable throwable, Class<? extends Throwable> causeType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (causeType.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private CodeReviewResult parseCodeReviewResponse(String response, int tokensUsed)
@@ -370,33 +499,15 @@ public class CodeReviewService {
     private String getTestResponse() {
         return """
             {
-              "summary": "🧪 TEST MODE: This is a fixed test response to verify comment posting works correctly.",
+              "summary": "🧪 테스트 모드: GitHub PR 연동 테스트 응답입니다. 코멘트 게시 기능이 정상적으로 작동하는지 확인하세요.",
               "comments": [
                 {
                   "filePath": "src/main/java/com/codereview/assistant/service/CodeReviewService.java",
-                  "lineNumber": 35,
-                  "severity": "warning",
-                  "category": "test",
-                  "message": "TEST COMMENT #1: This is a test comment to verify GitHub API integration is working.",
-                  "suggestion": "This is just a test. No action needed.",
-                  "codeExample": "// This is a test code example"
-                },
-                {
-                  "filePath": "src/main/java/com/codereview/assistant/service/ReviewService.java",
-                  "lineNumber": 45,
+                  "lineNumber": 50,
                   "severity": "info",
                   "category": "test",
-                  "message": "TEST COMMENT #2: Verifying that multiple comments can be posted successfully.",
-                  "suggestion": "If you see this comment on GitHub PR, the integration is working!"
-                },
-                {
-                  "filePath": "README.md",
-                  "lineNumber": 1,
-                  "severity": "error",
-                  "category": "test",
-                  "message": "TEST COMMENT #3: Testing error severity display.",
-                  "suggestion": "This should appear with a red error icon.",
-                  "codeExample": "# Test Example\\nThis is just for testing"
+                  "message": "GitHub PR 코멘트 게시 기능 테스트입니다. 이 코멘트가 PR에 정상적으로 표시되면 연동이 성공한 것입니다.",
+                  "suggestion": "테스트용 코멘트이므로 별도 조치가 필요하지 않습니다. GitHub PR에서 이 내용이 보이는지 확인하세요."
                 }
               ]
             }
