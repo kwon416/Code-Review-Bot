@@ -127,24 +127,64 @@ public class LanguageSpecificPromptService {
         String focus = getFocusAreas(language);
 
         return """
-            %s 코드 리뷰. 중점: %s
+            당신은 %s 코드 리뷰 전문가입니다.
 
-            **한국어로만 응답하세요.**
+            **응답 언어: 한국어만 사용**
 
-            Diff:
-            ```
+            ## 검토 중점 사항
+            %s
+
+            ## 변경 내역 (Diff)
+            ```diff
             %s
             ```
 
-            JSON 형식:
-            {"summary":"요약 또는 '이슈 없음'","comments":[{"filePath":"","lineNumber":0,"severity":"error|warning|info","category":"bug|security|performance","message":"설명","suggestion":"제안"}]}
+            ## 리뷰 원칙 (중요!)
+            1. **실제로 문제가 되는 것만 지적**
+               - 버그: 런타임 에러, 로직 오류, 예외 처리 누락
+               - 보안: SQL 인젝션, XSS, 인증/권한 문제, 민감정보 노출
+               - 성능: 명백한 성능 저하 (N+1 쿼리, 무한루프, 메모리 누수)
 
-            중요한 규칙:
-            - 실제 심각한 문제만 지적 (버그, 보안 취약점, 심각한 성능 이슈)
-            - 이슈가 없으면 comments를 빈 배열로 반환
-            - 관련된 여러 이슈는 하나의 코멘트로 통합
-            - 최대 3개 이슈만 (억지로 찾지 말 것)
-            - 사소한 스타일, 명명 규칙, 주석 등은 무시
+            2. **지적하지 말아야 할 것**
+               - 변수/함수 명명 규칙
+               - 코드 스타일 (들여쓰기, 줄바꿈 등)
+               - 주석 추가 제안
+               - 사소한 리팩토링 제안
+               - 개인 선호도에 따른 의견
+
+            3. **응답 규칙**
+               - 이슈가 없으면 빈 배열 반환 (억지로 찾지 말 것)
+               - 관련된 여러 문제는 하나로 통합
+               - 최대 3개까지만 (우선순위 높은 것만)
+               - 구체적인 해결 방법 제시
+
+            ## 응답 형식 (JSON)
+            ```json
+            {
+              "summary": "전체 요약 또는 '이슈 없음'",
+              "comments": [
+                {
+                  "filePath": "파일 경로",
+                  "lineNumber": 줄 번호,
+                  "severity": "error|warning|info",
+                  "category": "bug|security|performance",
+                  "message": "문제 설명 (무엇이 문제인지)",
+                  "suggestion": "해결 방법 (어떻게 고칠지)"
+                }
+              ]
+            }
+            ```
+
+            ## 좋은 예시
+            ✅ "SQL 쿼리에 사용자 입력이 직접 포함되어 SQL 인젝션 위험이 있습니다. PreparedStatement를 사용하세요."
+            ✅ "null 체크 없이 메서드를 호출하여 NullPointerException이 발생할 수 있습니다."
+
+            ## 나쁜 예시
+            ❌ "변수명을 더 명확하게 변경하세요."
+            ❌ "주석을 추가하면 좋겠습니다."
+            ❌ "코드를 리팩토링하면 더 깔끔해질 것 같습니다."
+
+            **리뷰를 시작하세요. 실제 문제만 찾으세요.**
             """.formatted(language, focus, diffContent);
     }
 
@@ -153,13 +193,47 @@ public class LanguageSpecificPromptService {
      */
     private String getFocusAreas(String language) {
         return switch (language) {
-            case "Java" -> "Security (SQL injection, XSS), NullPointers, Resource leaks, Thread safety";
-            case "Python" -> "Security (eval, exec), Type errors, Exceptions, Memory issues";
-            case "JavaScript", "TypeScript" -> "Security (XSS, injection), Async errors, Type safety, Memory leaks";
-            case "Go" -> "Error handling, Goroutine leaks, Race conditions, nil pointers";
-            case "Rust" -> "Unsafe code, Panics, Lifetime issues, Ownership bugs";
-            case "C++" -> "Memory leaks, Buffer overflows, Use-after-free, Undefined behavior";
-            default -> "Security vulnerabilities, Critical bugs, Performance issues";
+            case "Java" ->
+                "- SQL 인젝션, XSS 취약점\n" +
+                "- NullPointerException 위험\n" +
+                "- 리소스 미해제 (스트림, 커넥션)\n" +
+                "- 동시성 문제 (Race condition)";
+
+            case "Python" ->
+                "- 보안 위험 (eval, exec, pickle)\n" +
+                "- 타입 오류 및 예외 처리\n" +
+                "- 메모리 누수 (순환 참조)\n" +
+                "- 비동기 처리 오류";
+
+            case "JavaScript", "TypeScript" ->
+                "- XSS, 인젝션 공격\n" +
+                "- Promise/async 처리 오류\n" +
+                "- 메모리 누수 (이벤트 리스너)\n" +
+                "- null/undefined 처리";
+
+            case "Go" ->
+                "- 에러 처리 누락\n" +
+                "- Goroutine 누수\n" +
+                "- Race condition\n" +
+                "- nil pointer 참조";
+
+            case "Rust" ->
+                "- unsafe 블록 남용\n" +
+                "- panic 발생 가능성\n" +
+                "- 생명주기 문제\n" +
+                "- 소유권 규칙 위반";
+
+            case "C++" ->
+                "- 메모리 누수, Use-after-free\n" +
+                "- 버퍼 오버플로우\n" +
+                "- 미정의 동작\n" +
+                "- RAII 미준수";
+
+            default ->
+                "- 보안 취약점\n" +
+                "- 치명적 버그\n" +
+                "- 성능 저하\n" +
+                "- 예외 처리 누락";
         };
     }
 
